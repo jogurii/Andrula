@@ -1,17 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Andrula — QuickBooks & WIP Ledger Reconciler</title>
-  
+  <title>Andrula — Financial & Ledger Reconciliation Engine</title>
+
   <!-- Typography: Outfit (Warm editorial headlines) + Plus Jakarta Sans (Crisp financial clarity) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-  
+  <link
+    href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+
   <!-- SheetJS CDN -->
   <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  </script>
 
   <style>
     :root {
@@ -24,13 +31,13 @@
       --blossom-500: #d65876;
       --blossom-600: #ba3c5c;
       --blossom-700: #992946;
-      
+
       --sage-50: #f2f8f4;
       --sage-100: #e0efe5;
       --sage-200: #c2ded0;
       --sage-500: #4a8261;
       --sage-600: #36664a;
-      
+
       --amber-50: #fffbeb;
       --amber-100: #fef3c7;
       --amber-200: #fde68a;
@@ -43,7 +50,7 @@
       --slate-title: #2b232c;
       --slate-body: #534855;
       --slate-muted: #88788a;
-      
+
       --shadow-soft: 0 12px 36px -8px rgba(186, 60, 92, 0.08), 0 4px 16px -2px rgba(43, 35, 44, 0.03);
       --shadow-hover: 0 18px 40px -8px rgba(186, 60, 92, 0.15), 0 6px 20px -2px rgba(43, 35, 44, 0.04);
       --radius-card: 22px;
@@ -60,7 +67,7 @@
     body {
       font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
       background-color: var(--cream-bg);
-      background-image: 
+      background-image:
         radial-gradient(circle at 8% 12%, rgba(249, 209, 219, 0.45) 0%, transparent 42%),
         radial-gradient(circle at 92% 88%, rgba(194, 222, 208, 0.4) 0%, transparent 48%),
         radial-gradient(circle at 50% 50%, rgba(255, 245, 247, 0.6) 0%, transparent 100%);
@@ -135,7 +142,7 @@
       padding: 0.4rem 0.85rem;
       font-size: 0.8rem;
       color: var(--slate-body);
-      box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
     }
 
     .currency-select-wrapper select {
@@ -229,7 +236,8 @@
       position: relative;
     }
 
-    .dropzone:hover, .dropzone.drag-over {
+    .dropzone:hover,
+    .dropzone.drag-over {
       border-color: var(--blossom-400);
       background-color: #fff0f3;
       transform: translateY(-2px);
@@ -522,18 +530,24 @@
     /* Table */
     .table-container {
       overflow-x: auto;
+      max-height: 560px;
+      overflow-y: auto;
       border: 1px solid var(--card-border);
       border-radius: 14px;
+      position: relative;
     }
 
     table {
       width: 100%;
-      border-collapse: collapse;
+      border-collapse: separate;
+      border-spacing: 0;
       font-size: 0.85rem;
       text-align: left;
     }
 
     th {
+      position: sticky;
+      top: 0;
       background-color: var(--blossom-50);
       color: var(--slate-muted);
       font-weight: 700;
@@ -541,27 +555,182 @@
       text-transform: uppercase;
       letter-spacing: 0.05em;
       padding: 0.85rem 1rem;
-      border-bottom: 1px solid var(--card-border);
+      border-bottom: 2px solid var(--blossom-200);
+      z-index: 10;
+      user-select: none;
+    }
+
+    th.sortable-th {
+      cursor: pointer;
+      transition: background-color 0.15s, color 0.15s;
+    }
+
+    th.sortable-th:hover {
+      background-color: var(--blossom-100);
+      color: var(--blossom-700);
+    }
+
+    .sort-arrow {
+      display: inline-block;
+      font-size: 0.65rem;
+      margin-left: 0.25rem;
+      color: var(--blossom-600);
     }
 
     td {
-      padding: 0.9rem 1rem;
+      padding: 0.85rem 1rem;
       border-bottom: 1px solid var(--blossom-100);
       color: var(--slate-body);
       vertical-align: middle;
+      background: var(--surface-white);
     }
 
     tbody tr {
-      transition: background-color 0.15s ease;
+      transition: background-color 0.15s ease, opacity 0.2s ease;
       cursor: pointer;
     }
 
-    tbody tr:hover {
+    tbody tr:hover td {
       background-color: #fff9fa;
     }
 
     tbody tr:last-child td {
       border-bottom: none;
+    }
+
+    tbody tr.row-reviewed td {
+      background-color: #fafbfa;
+      opacity: 0.6;
+    }
+
+    tbody tr.row-reviewed:hover td {
+      background-color: #f3f8f4;
+      opacity: 0.9;
+    }
+
+    tbody tr.row-reviewed .ref-code {
+      text-decoration: line-through;
+      color: var(--slate-muted);
+    }
+
+    .audit-checkbox {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--sage-500);
+      cursor: pointer;
+    }
+
+    .reviewed-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: var(--sage-50);
+      color: var(--sage-600);
+      border: 1px solid var(--sage-200);
+      padding: 0.35rem 0.8rem;
+      border-radius: var(--radius-pill);
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+
+    .modal-audit-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.32rem 0.8rem;
+      border-radius: var(--radius-pill);
+      border: 1px solid var(--card-border);
+      background: var(--surface-cream);
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--slate-title);
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      user-select: none;
+    }
+
+    .modal-audit-btn:hover {
+      border-color: var(--sage-400);
+      background: var(--sage-50);
+      transform: translateY(-1px);
+    }
+
+    .modal-audit-btn.is-reviewed {
+      background: var(--sage-100);
+      border-color: var(--sage-500);
+      color: var(--sage-700);
+      box-shadow: 0 2px 6px rgba(74, 124, 89, 0.12);
+    }
+
+    td.td-checkbox {
+      cursor: pointer;
+      text-align: center;
+      width: 44px;
+    }
+
+    .copy-pill-btn {
+      background: var(--blossom-50);
+      border: 1px solid var(--blossom-200);
+      color: var(--blossom-600);
+      padding: 0.25rem 0.65rem;
+      border-radius: var(--radius-pill);
+      font-size: 0.74rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      transition: all 0.2s;
+    }
+
+    .copy-pill-btn:hover {
+      background: var(--blossom-100);
+      color: var(--blossom-700);
+      transform: translateY(-1px);
+    }
+
+    .select-inline {
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-pill);
+      padding: 0.4rem 0.8rem;
+      font-family: inherit;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--slate-body);
+      background: var(--surface-white);
+      outline: none;
+      cursor: pointer;
+    }
+
+    .select-inline:focus {
+      border-color: var(--blossom-400);
+    }
+
+    /* Toast Notification */
+    .toast-pill {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background: var(--slate-title);
+      color: #fff;
+      padding: 0.65rem 1.25rem;
+      border-radius: var(--radius-pill);
+      font-size: 0.82rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+      z-index: 9999;
+      opacity: 0;
+      transform: translateY(12px);
+      transition: all 0.25s ease;
+      pointer-events: none;
+    }
+
+    .toast-pill.show {
+      opacity: 1;
+      transform: translateY(0);
     }
 
     .ref-code {
@@ -694,6 +863,140 @@
       color: var(--slate-title);
     }
 
+    /* Shortcuts Guide Header Button & Dialog */
+    .shortcuts-guide-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      background: var(--surface-white);
+      border: 1px solid var(--card-border);
+      padding: 0.35rem 0.75rem;
+      border-radius: var(--radius-pill);
+      font-family: inherit;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--slate-title);
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    }
+
+    .shortcuts-guide-btn:hover {
+      border-color: var(--blossom-300);
+      background: var(--blossom-50);
+      transform: translateY(-1px);
+      box-shadow: 0 2px 6px rgba(228, 117, 144, 0.12);
+    }
+
+    .header-kbd {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 18px;
+      height: 18px;
+      padding: 0 0.25rem;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--blossom-600);
+      background: var(--blossom-100);
+      border-radius: 4px;
+      line-height: 1;
+    }
+
+    .shortcuts-dialog {
+      max-width: 620px;
+    }
+
+    .shortcuts-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      padding: 1.25rem 1.75rem;
+    }
+
+    @media (max-width: 640px) {
+      .shortcuts-grid {
+        grid-template-columns: 1fr;
+        gap: 0.85rem;
+        padding: 1rem;
+      }
+    }
+
+    .shortcut-group {
+      background: var(--surface-cream);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 1rem 1.1rem;
+    }
+
+    .shortcut-group-title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--slate-title);
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .shortcut-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .shortcut-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.8rem;
+    }
+
+    .shortcut-desc {
+      color: var(--slate-body);
+      font-weight: 500;
+    }
+
+    .shortcut-keys {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .shortcut-key {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 22px;
+      height: 22px;
+      padding: 0 0.4rem;
+      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--slate-title);
+      background: #ffffff;
+      border: 1px solid #d4ccd0;
+      border-bottom: 2px solid #b8aeb3;
+      border-radius: 5px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+    }
+
+    .shortcut-tip-box {
+      margin: 0 1.75rem 1.5rem 1.75rem;
+      background: var(--sage-50);
+      border: 1px solid var(--sage-200);
+      border-radius: 12px;
+      padding: 0.85rem 1.1rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.65rem;
+      font-size: 0.8rem;
+      color: var(--sage-700);
+      line-height: 1.45;
+    }
+
     .modal-body {
       padding: 1.5rem 1.75rem;
       overflow-y: auto;
@@ -715,10 +1018,12 @@
     .summary-box {
       font-size: 0.8rem;
     }
+
     .summary-box-label {
       color: var(--slate-muted);
       margin-bottom: 0.2rem;
     }
+
     .summary-box-val {
       font-family: 'Outfit', sans-serif;
       font-size: 1.2rem;
@@ -952,13 +1257,25 @@
 
     /* Animations */
     @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
     }
 
     @keyframes slideUp {
-      from { transform: translateY(12px); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
+      from {
+        transform: translateY(12px);
+        opacity: 0;
+      }
+
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
     }
 
     .petal-accent {
@@ -972,6 +1289,7 @@
     }
   </style>
 </head>
+
 <body>
 
   <div class="container">
@@ -981,14 +1299,16 @@
       <div class="brand-title-group">
         <div class="logo-bloom">
           <!-- Bloom Logo SVG -->
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 4c1.5-2 4-2 5.5-.5s1.5 4-.5 5.5c2 1.5 2 4 .5 5.5s-4 1.5-5.5-.5c-1.5 2-4 2-5.5.5s-1.5-4 .5-5.5c-2-1.5-2-4-.5-5.5S10.5 2 12 4z"/>
-            <circle cx="12" cy="12" r="2.5" fill="currentColor"/>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path
+              d="M12 4c1.5-2 4-2 5.5-.5s1.5 4-.5 5.5c2 1.5 2 4 .5 5.5s-4 1.5-5.5-.5c-1.5 2-4 2-5.5.5s-1.5-4 .5-5.5c-2-1.5-2-4-.5-5.5S10.5 2 12 4z" />
+            <circle cx="12" cy="12" r="2.5" fill="currentColor" />
           </svg>
         </div>
         <div>
           <h1 class="brand-name">Andrula</h1>
-          <p class="brand-subtitle">QuickBooks & WIP Ledger Reconciler</p>
+          <p class="brand-subtitle">Financial & Ledger Reconciliation Engine</p>
         </div>
       </div>
 
@@ -1007,15 +1327,23 @@
           </select>
         </div>
 
-        <!-- Privacy Badge -->
-        <div class="privacy-badge">
-          <!-- Clean Shield/Lock SVG -->
+        <!-- Shortcuts Guide Header Button -->
+        <button class="shortcuts-guide-btn" id="btnOpenShortcuts" title="Keyboard Shortcuts Guide (Press ?)">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            <rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect>
+            <line x1="6" y1="8" x2="6.01" y2="8"></line>
+            <line x1="10" y1="8" x2="10.01" y2="8"></line>
+            <line x1="14" y1="8" x2="14.01" y2="8"></line>
+            <line x1="18" y1="8" x2="18.01" y2="8"></line>
+            <line x1="6" y1="12" x2="6.01" y2="12"></line>
+            <line x1="10" y1="12" x2="10.01" y2="12"></line>
+            <line x1="14" y1="12" x2="14.01" y2="12"></line>
+            <line x1="18" y1="12" x2="18.01" y2="12"></line>
+            <line x1="8" y1="16" x2="16" y2="16"></line>
           </svg>
-          <span>100% Client-Side Privacy</span>
-        </div>
+          <span>Hotkeys</span>
+          <kbd class="header-kbd">?</kbd>
+        </button>
       </div>
     </header>
 
@@ -1024,12 +1352,28 @@
       <!-- Mode Selection Tabs -->
       <div class="tabs-nav">
         <button class="tab-btn active" id="tabSingleMode">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+          </svg>
           Single Workbook (2 Sheets)
         </button>
         <button class="tab-btn" id="tabDualMode">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v1"/><path d="M18 8h4a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-4"/></svg>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v1" />
+            <path d="M18 8h4a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-4" />
+          </svg>
           Two Separate Files (QB & WIP)
+        </button>
+        <button class="tab-btn" id="tabSupplierMode">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+            <line x1="16" y1="13" x2="8" y2="13" />
+            <line x1="16" y1="17" x2="8" y2="17" />
+            <polyline points="10 9 9 9 8 9" />
+          </svg>
+          Supplier SOA (PDF vs QB)
         </button>
       </div>
 
@@ -1037,14 +1381,16 @@
       <div id="singleDropzoneWrapper">
         <div class="dropzone" id="dropzoneSingle">
           <div class="dropzone-icon">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
               <polyline points="17 8 12 3 7 8"></polyline>
               <line x1="12" y1="3" x2="12" y2="15"></line>
             </svg>
           </div>
           <p class="dropzone-title">Click to choose file or drag & drop here</p>
-          <p class="dropzone-desc">Select an Excel file (<code>.xlsx</code> or <code>.xls</code>) with QuickBooks and WIP Ledger sheets</p>
+          <p class="dropzone-desc">Select an Excel file (<code>.xlsx</code> or <code>.xls</code>) with QuickBooks and
+            WIP Ledger sheets</p>
           <div class="dropzone-file-name" id="singleFileName"></div>
           <input type="file" id="fileInputSingle" accept=".xlsx, .xls" style="display: none;">
         </div>
@@ -1056,7 +1402,10 @@
           <!-- QuickBooks Dropzone -->
           <div class="dropzone" id="dropzoneQB">
             <div class="dropzone-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+              </svg>
             </div>
             <p class="dropzone-title">1. QuickBooks Report</p>
             <p class="dropzone-desc">Click or drop your QuickBooks export file (<code>.xlsx</code>)</p>
@@ -1067,7 +1416,10 @@
           <!-- WIP Ledger Dropzone -->
           <div class="dropzone" id="dropzoneWIP">
             <div class="dropzone-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+              </svg>
             </div>
             <p class="dropzone-title">2. WIP Ledger Report</p>
             <p class="dropzone-desc">Click or drop your WIP Ledger file (<code>.xlsx</code>)</p>
@@ -1077,9 +1429,46 @@
         </div>
       </div>
 
+      <div id="supplierDropzoneWrapper" style="display: none;">
+        <div class="dropzone-grid dual">
+          <div class="dropzone" id="dropzoneSupplierPDF">
+            <div class="dropzone-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <line x1="16" y1="13" x2="8" y2="13" />
+                <line x1="16" y1="17" x2="8" y2="17" />
+                <polyline points="10 9 9 9 8 9" />
+              </svg>
+            </div>
+            <p class="dropzone-title">1. Supplier Statement (PDF)</p>
+            <p class="dropzone-desc">Click or drop the vendor PDF statement (<code>.pdf</code>)</p>
+            <div class="dropzone-file-name" id="supplierPdfName"></div>
+            <input type="file" id="fileInputSupplierPDF" accept=".pdf" style="display: none;">
+          </div>
+          <div class="dropzone" id="dropzoneSupplierQB">
+            <div class="dropzone-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+              </svg>
+            </div>
+            <p class="dropzone-title">2. QuickBooks SOA (Excel)</p>
+            <p class="dropzone-desc">Click or drop QuickBooks Supplier Balance Detail (<code>.xlsx</code>, <code>.xls</code>)</p>
+            <div class="dropzone-file-name" id="supplierQbName"></div>
+            <input type="file" id="fileInputSupplierQB" accept=".xlsx, .xls" style="display: none;">
+          </div>
+        </div>
+      </div>
+
       <!-- Optional Sheet & Column Config -->
       <button class="config-toggle" id="toggleConfigBtn">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path
+            d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+          </path>
+        </svg>
         Sheet & Column Settings (Optional)
       </button>
 
@@ -1146,7 +1535,8 @@
       <!-- Table Toolbar -->
       <div class="table-toolbar">
         <div>
-          <h2 style="font-family: 'Outfit', sans-serif; font-size: 1.25rem; color: var(--slate-title); margin-bottom: 0.25rem;">
+          <h2
+            style="font-family: 'Outfit', sans-serif; font-size: 1.25rem; color: var(--slate-title); margin-bottom: 0.25rem;">
             Discrepancy Breakdown
           </h2>
           <p style="font-size: 0.8rem; color: var(--slate-muted);" id="discrepancyCountSubtitle">
@@ -1155,13 +1545,37 @@
         </div>
 
         <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+          <!-- Audit Progress Badge -->
+          <span id="reviewedCounterBadge" class="reviewed-pill" style="display: none;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            <span id="reviewedCounterText">0 of 0 Reviewed</span>
+          </span>
+
           <div class="search-box">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
             <input type="text" id="searchInput" placeholder="Search reference no...">
           </div>
 
+          <!-- Page Size Selector -->
+          <div style="display: inline-flex; align-items: center; gap: 0.4rem;">
+            <label for="selectPageSize" style="font-size: 0.78rem; color: var(--slate-muted); font-weight: 600;">View:</label>
+            <select id="selectPageSize" class="select-inline" title="Choose display rows (All recommended for Ctrl+F)">
+              <option value="all" selected>All (Ctrl+F)</option>
+              <option value="100">100</option>
+              <option value="50">50</option>
+              <option value="25">25</option>
+            </select>
+          </div>
+
           <button class="btn-primary" id="exportBtn">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
             Export Excel
           </button>
         </div>
@@ -1176,18 +1590,19 @@
         <button class="chip-btn" data-filter="line_diff">Line Count Diff (<span id="countLineDiff">0</span>)</button>
       </div>
 
-      <!-- Table View -->
+      <!-- Table View with Sticky Header and Sorting -->
       <div class="table-container">
         <table>
           <thead>
             <tr>
-              <th>Reference (No.)</th>
-              <th>QB Total</th>
-              <th>QB Lines</th>
-              <th>WIP Total</th>
-              <th>WIP Lines</th>
-              <th>Variance (QB - WIP)</th>
-              <th>Status</th>
+              <th style="width: 44px; text-align: center;" title="Audit triage: mark as reviewed">✓</th>
+              <th class="sortable-th" data-sort="ref" title="Click to sort by Reference">Reference (No.) <span class="sort-arrow" id="arrow-ref"></span></th>
+              <th class="sortable-th" data-sort="qbSum" title="Click to sort by QB Total">QB Total <span class="sort-arrow" id="arrow-qbSum"></span></th>
+              <th class="sortable-th" data-sort="qbLines" title="Click to sort by QB Lines">QB Lines <span class="sort-arrow" id="arrow-qbLines"></span></th>
+              <th class="sortable-th" data-sort="wipSum" title="Click to sort by WIP/Supplier Total">WIP Total <span class="sort-arrow" id="arrow-wipSum"></span></th>
+              <th class="sortable-th" data-sort="wipLines" title="Click to sort by WIP/Supplier Lines">WIP Lines <span class="sort-arrow" id="arrow-wipLines"></span></th>
+              <th class="sortable-th" data-sort="variance" title="Click to sort by Variance">Variance (QB - WIP) <span class="sort-arrow" id="arrow-variance">▼</span></th>
+              <th class="sortable-th" data-sort="statusLabel" title="Click to sort by Status">Status <span class="sort-arrow" id="arrow-statusLabel"></span></th>
               <th style="text-align: right;">Action</th>
             </tr>
           </thead>
@@ -1195,6 +1610,16 @@
             <!-- Rendered by JS -->
           </tbody>
         </table>
+      </div>
+
+      <!-- Pagination / Scroll Info Bar -->
+      <div class="pagination-bar" id="paginationBar" style="display: none; align-items: center; justify-content: space-between; margin-top: 1.25rem; padding-top: 0.85rem; border-top: 1px solid var(--card-border); font-size: 0.82rem; color: var(--slate-muted); flex-wrap: wrap; gap: 0.75rem;">
+        <div id="paginationInfo">Showing all entries</div>
+        <div id="paginationButtonsWrap" style="display: flex; gap: 0.5rem; align-items: center;">
+          <button class="action-inspect-btn" id="btnPrevPage" style="padding: 0.45rem 0.95rem; font-weight: 600;">Previous</button>
+          <span id="paginationPageNum" style="font-weight: 600; color: var(--slate-title); padding: 0 0.5rem;">Page 1 of 1</span>
+          <button class="action-inspect-btn" id="btnNextPage" style="padding: 0.45rem 0.95rem; font-weight: 600;">Next</button>
+        </div>
       </div>
     </div>
 
@@ -1207,13 +1632,39 @@
         <div class="modal-title-wrap">
           <span class="petal-accent"></span>
           <div>
-            <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.15rem; color: var(--slate-title);" id="modalRefTitle">Ref: #12345</h3>
-            <p style="font-size: 0.78rem; color: var(--slate-muted);" id="modalStatusSubtitle">Audit & Transaction Comparison</p>
+            <div style="display: flex; align-items: center; gap: 0.55rem; flex-wrap: wrap;">
+              <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.15rem; color: var(--slate-title);"
+                id="modalRefTitle">Ref: #12345</h3>
+              <button class="copy-pill-btn" id="btnCopyModalRef" title="Copy reference to clipboard">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                Copy Ref
+              </button>
+            </div>
+            <p style="font-size: 0.78rem; color: var(--slate-muted);" id="modalStatusSubtitle">Audit & Transaction
+              Comparison</p>
           </div>
         </div>
-        <button class="modal-close-btn" id="modalCloseBtn" aria-label="Close dialog">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-        </button>
+        <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
+          <button type="button" class="modal-audit-btn" id="btnModalToggleReviewed" title="Mark / Unmark this discrepancy as reviewed (Shortcut: M key)">
+            <input type="checkbox" id="modalReviewedCheckbox" class="audit-checkbox" tabindex="-1" style="pointer-events: none;">
+            <span id="modalReviewedText">Mark as Reviewed</span>
+          </button>
+          <div style="display: inline-flex; align-items: center; gap: 0.35rem; background: var(--blossom-50); border: 1px solid var(--blossom-200); border-radius: var(--radius-pill); padding: 0.25rem 0.55rem;">
+            <button class="action-inspect-btn" id="btnModalPrev" style="padding: 0.25rem 0.6rem; font-size: 0.76rem;" title="Previous Discrepancy (← Left Arrow)">
+              ◀ Prev
+            </button>
+            <span id="modalCounterText" style="font-size: 0.75rem; font-weight: 600; color: var(--slate-muted); min-width: 48px; text-align: center;">1 of 1</span>
+            <button class="action-inspect-btn" id="btnModalNext" style="padding: 0.25rem 0.6rem; font-size: 0.76rem;" title="Next Discrepancy (→ Right Arrow)">
+              Next ▶
+            </button>
+          </div>
+          <button class="modal-close-btn" id="modalCloseBtn" aria-label="Close dialog" title="Close (Esc)">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
       </div>
 
       <div class="modal-body">
@@ -1235,7 +1686,12 @@
 
         <!-- Prominent Visual Alert Banner Explaining the Discrepancy -->
         <div class="drilldown-alert-banner" id="modalAlertBanner">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0; margin-top: 2px;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            style="flex-shrink: 0; margin-top: 2px;">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
           <div id="modalAlertText">Detailed discrepancy notes.</div>
         </div>
 
@@ -1246,11 +1702,12 @@
             <div class="drilldown-panel-title">
               <span style="display: flex; align-items: center; gap: 0.4rem;">
                 QuickBooks Lines
-                <span style="font-weight: 500; font-size: 0.75rem; color: var(--slate-muted);" id="modalQBLinesCount">(0 lines)</span>
+                <span style="font-weight: 500; font-size: 0.75rem; color: var(--slate-muted);" id="modalQBLinesCount">(0
+                  lines)</span>
               </span>
               <span id="modalQBPanelBadge" class="panel-badge">Status</span>
             </div>
-            
+
             <div id="modalQBContentArea">
               <table class="drilldown-table">
                 <thead>
@@ -1270,7 +1727,8 @@
             <div class="drilldown-panel-title">
               <span style="display: flex; align-items: center; gap: 0.4rem;">
                 WIP Ledger Lines
-                <span style="font-weight: 500; font-size: 0.75rem; color: var(--slate-muted);" id="modalWIPLinesCount">(0 lines)</span>
+                <span style="font-weight: 500; font-size: 0.75rem; color: var(--slate-muted);"
+                  id="modalWIPLinesCount">(0 lines)</span>
               </span>
               <span id="modalWIPPanelBadge" class="panel-badge">Status</span>
             </div>
@@ -1291,7 +1749,8 @@
         </div>
 
         <!-- Legend / Guidance Footer -->
-        <div style="margin-top: 1.25rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem; font-size: 0.75rem; color: var(--slate-muted); background: var(--blossom-50); padding: 0.65rem 1rem; border-radius: 10px; border: 1px solid var(--blossom-100);">
+        <div
+          style="margin-top: 1.25rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem; font-size: 0.75rem; color: var(--slate-muted); background: var(--blossom-50); padding: 0.65rem 1rem; border-radius: 10px; border: 1px solid var(--blossom-100);">
           <span style="font-weight: 600;">Status Marking Guide:</span>
           <span style="display: inline-flex; align-items: center; gap: 0.35rem;">
             <span class="row-status-pill pill-matched">✓ Matched</span> Equal counterpart found
@@ -1307,15 +1766,113 @@
     </div>
   </div>
 
+  <!-- Modal Keyboard Shortcuts Guide -->
+  <div class="modal-backdrop" id="shortcutsModal">
+    <div class="modal-dialog shortcuts-dialog">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <span class="petal-accent"></span>
+          <div>
+            <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.15rem; color: var(--slate-title);">
+              Keyboard Shortcuts Guide
+            </h3>
+            <p style="font-size: 0.78rem; color: var(--slate-muted);">
+              Speed up your daily accounting reconciliation workflow
+            </p>
+          </div>
+        </div>
+        <button class="modal-close-btn" id="shortcutsCloseBtn" aria-label="Close shortcuts guide" title="Close (Esc)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <div class="shortcuts-grid">
+        <!-- Group 1: Inspection & Triage -->
+        <div class="shortcut-group">
+          <div class="shortcut-group-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            Discrepancy Inspection
+          </div>
+          <div class="shortcut-list">
+            <div class="shortcut-item">
+              <span class="shortcut-desc">Mark / Unmark Reviewed</span>
+              <span class="shortcut-keys"><span class="shortcut-key">M</span></span>
+            </div>
+            <div class="shortcut-item">
+              <span class="shortcut-desc">Next Discrepancy</span>
+              <span class="shortcut-keys"><span class="shortcut-key">→</span> <span style="font-size: 0.7rem; color:var(--slate-muted)">or</span> <span class="shortcut-key">J</span></span>
+            </div>
+            <div class="shortcut-item">
+              <span class="shortcut-desc">Previous Discrepancy</span>
+              <span class="shortcut-keys"><span class="shortcut-key">←</span> <span style="font-size: 0.7rem; color:var(--slate-muted)">or</span> <span class="shortcut-key">K</span></span>
+            </div>
+            <div class="shortcut-item">
+              <span class="shortcut-desc">Copy Voucher Ref</span>
+              <span class="shortcut-keys"><span class="shortcut-key">C</span></span>
+            </div>
+            <div class="shortcut-item">
+              <span class="shortcut-desc">Close Modal</span>
+              <span class="shortcut-keys"><span class="shortcut-key">Esc</span></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Group 2: Global & Navigation -->
+        <div class="shortcut-group">
+          <div class="shortcut-group-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+            Global Navigation
+          </div>
+          <div class="shortcut-list">
+            <div class="shortcut-item">
+              <span class="shortcut-desc">Focus Search Bar</span>
+              <span class="shortcut-keys"><span class="shortcut-key">/</span></span>
+            </div>
+            <div class="shortcut-item">
+              <span class="shortcut-desc">In-Page Find</span>
+              <span class="shortcut-keys"><span class="shortcut-key">Ctrl</span><span class="shortcut-key">F</span></span>
+            </div>
+            <div class="shortcut-item">
+              <span class="shortcut-desc">Export to Excel</span>
+              <span class="shortcut-keys"><span class="shortcut-key">Ctrl</span><span class="shortcut-key">E</span></span>
+            </div>
+            <div class="shortcut-item">
+              <span class="shortcut-desc">Switch Mode (1 / 2 / 3)</span>
+              <span class="shortcut-keys"><span class="shortcut-key">1</span><span class="shortcut-key">2</span><span class="shortcut-key">3</span></span>
+            </div>
+            <div class="shortcut-item">
+              <span class="shortcut-desc">Toggle Hotkeys Guide</span>
+              <span class="shortcut-keys"><span class="shortcut-key">?</span></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="shortcut-tip-box">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0; margin-top: 1px;"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+        <div>
+          <strong>Accountant Rapid-Triage Workflow:</strong> Click any row to inspect details. Press <span class="shortcut-key" style="font-size: 0.68rem; padding: 0 0.3rem;">M</span> to mark as reviewed, then press <span class="shortcut-key" style="font-size: 0.68rem; padding: 0 0.3rem;">→</span> to cycle to the next issue instantly without moving your hands to the mouse!
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script>
     // State
-    let currentMode = 'single'; // 'single' | 'dual'
+    let currentMode = 'single'; // 'single' | 'dual' | 'supplier'
     let singleWorkbook = null;
     let qbWorkbook = null;
     let wipWorkbook = null;
+    let supplierPdfResult = null;
+    let supplierQbWorkbook = null;
     let allDiscrepancies = [];
     let currentFilter = 'all';
     let searchQuery = '';
+    let currentPage = 1;
+    let searchDebounceTimer = null;
 
     // Currency Formatter
     const currencyConfigs = {
@@ -1328,6 +1885,134 @@
       AUD: { code: 'AUD', symbol: 'A$', decimals: 2 }
     };
 
+    function normalizeRef(ref) {
+      if (!ref) return '';
+      let s = String(ref).trim();
+      if (s.length > 150) s = s.slice(0, 150);
+      s = s.replace(/\.0+$/, ''); // Strip pandas float .0 artifact (e.g., 10294.0 -> 10294)
+      s = s.replace(/^#\s*/, ''); // Strip leading hash #
+      // Strip alphabetic vendor prefixes (e.g., "ULTIMATE-06-22937" or "ULTIMATE - 06-22937" -> "06-22937")
+      s = s.replace(/^[A-Za-z][A-Za-z0-9\s]*?[-_:\s]\s*(?=\d{2}-\d+)/i, '');
+      return s;
+    }
+
+    function formatDateCell(val) {
+      if (!val) return '-';
+      if (val instanceof Date) {
+        if (isNaN(val.getTime())) return '-';
+        return val.toISOString().slice(0, 10);
+      }
+      const s = String(val).trim();
+      if (!s) return '-';
+
+      // Excel numeric serial date (typically 20000 to 60000)
+      if (/^\d{5}$/.test(s)) {
+        const serial = parseInt(s, 10);
+        if (serial >= 20000 && serial <= 60000) {
+          const utcDays = serial - 25569;
+          const date = new Date(utcDays * 86400 * 1000);
+          if (!isNaN(date.getTime())) {
+            return date.toISOString().slice(0, 10);
+          }
+        }
+      }
+      return s;
+    }
+
+    async function parseSupplierPDF(arrayBuffer) {
+      if (!window.pdfjsLib) {
+        throw new Error('PDF.js library is not ready or failed to load. Please check your network connection.');
+      }
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      let fullText = '';
+      try {
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const content = await page.getTextContent();
+          const pageText = content.items.map(item => item.str).join(' ');
+          fullText += ' ' + pageText;
+        }
+      } finally {
+        if (pdf && typeof pdf.destroy === 'function') {
+          pdf.destroy();
+        }
+      }
+
+      if (!fullText.trim()) {
+        throw new Error('The uploaded PDF does not contain digital/selectable text. It appears to be a scanned image or photo. Andrula requires a digital PDF statement or an OCR-processed PDF to extract transactions.');
+      }
+
+      // Matches voucher patterns with standard accounting transaction types bounded within 150 chars
+      const regex = /([A-Za-z0-9]+(?:-[A-Za-z0-9]+)+|[0-9]{2}-[0-9]{4,6})\s+(Credit Sales(?:\s+Return)?|Tax Invoice|Invoice|Bill|Credit Note|Debit Note|Payment)\s+(\d{2}[\/.-]\d{2}[\/.-]\d{4})[\s\S]{0,150}?([\d,]+\.\d{2})\s*(Dr|Cr)?/gi;
+      const map = new Map();
+      let totalAmount = 0;
+      let match;
+
+      while ((match = regex.exec(fullText)) !== null) {
+        const refNo = normalizeRef(match[1].trim());
+        const transType = match[2].trim();
+        const dateStr = match[3].trim();
+        let amt = parseFloat(match[4].replace(/,/g, ''));
+        const isCredit = (match[5] && match[5].toUpperCase() === 'CR') ||
+                         transType.toLowerCase().includes('return') ||
+                         transType.toLowerCase().includes('credit note') ||
+                         transType.toLowerCase().includes('payment');
+
+        if (isCredit) {
+          amt = -Math.abs(amt);
+        }
+
+        amt = Math.round(amt * 100) / 100;
+        totalAmount = Math.round((totalAmount + amt) * 100) / 100;
+
+        if (!map.has(refNo)) {
+          map.set(refNo, { sum: 0, count: 0, rows: [] });
+        }
+        const entry = map.get(refNo);
+        entry.sum = Math.round((entry.sum + amt) * 100) / 100;
+        entry.count += 1;
+        entry.rows.push({
+          date: dateStr,
+          description: transType,
+          amount: amt
+        });
+      }
+
+      // Fallback: If strict format yielded 0 matches, attempt bounded voucher pattern
+      if (map.size === 0) {
+        const fallbackRegex = /(\d{2}-\d{4,6})[\s\S]{0,120}?(\d{2}[\/.-]\d{2}[\/.-]\d{4})[\s\S]{0,100}?([\d,]+\.\d{2})\s*(Dr|Cr)?/gi;
+        while ((match = fallbackRegex.exec(fullText)) !== null) {
+          const refNo = normalizeRef(match[1].trim());
+          const dateStr = match[2].trim();
+          let amt = parseFloat(match[3].replace(/,/g, ''));
+          const isCredit = match[4] && match[4].toUpperCase() === 'CR';
+          if (isCredit) amt = -Math.abs(amt);
+
+          amt = Math.round(amt * 100) / 100;
+          totalAmount = Math.round((totalAmount + amt) * 100) / 100;
+          if (!map.has(refNo)) {
+            map.set(refNo, { sum: 0, count: 0, rows: [] });
+          }
+          const entry = map.get(refNo);
+          entry.sum = Math.round((entry.sum + amt) * 100) / 100;
+          entry.count += 1;
+          entry.rows.push({
+            date: dateStr,
+            description: 'PDF Statement Voucher',
+            amount: amt
+          });
+        }
+      }
+
+      // Clean float rounding
+      for (const entry of map.values()) {
+        entry.sum = Math.round(entry.sum * 100) / 100;
+      }
+      totalAmount = Math.round(totalAmount * 100) / 100;
+
+      return { map, totalAmount, totalLines: map.size };
+    }
+
     function getSelectedCurrency() {
       const select = document.getElementById('currencySelector');
       return select ? select.value : 'AED';
@@ -1336,7 +2021,8 @@
     function formatMoney(amount) {
       const currKey = getSelectedCurrency();
       const cfg = currencyConfigs[currKey] || currencyConfigs.AED;
-      const num = Number(amount) || 0;
+      let num = Number(amount) || 0;
+      if (Math.abs(num) < 0.00001 || Object.is(num, -0)) num = 0;
       return cfg.symbol + num.toLocaleString('en-US', {
         minimumFractionDigits: cfg.decimals,
         maximumFractionDigits: cfg.decimals
@@ -1346,33 +2032,48 @@
     // Tab Switching
     const tabSingleMode = document.getElementById('tabSingleMode');
     const tabDualMode = document.getElementById('tabDualMode');
+    const tabSupplierMode = document.getElementById('tabSupplierMode');
     const singleDropzoneWrapper = document.getElementById('singleDropzoneWrapper');
     const dualDropzoneWrapper = document.getElementById('dualDropzoneWrapper');
+    const supplierDropzoneWrapper = document.getElementById('supplierDropzoneWrapper');
 
-    tabSingleMode.addEventListener('click', () => {
-      currentMode = 'single';
-      tabSingleMode.classList.add('active');
-      tabDualMode.classList.remove('active');
-      singleDropzoneWrapper.style.display = 'block';
-      dualDropzoneWrapper.style.display = 'none';
+    function switchMode(mode) {
+      currentMode = mode;
+      tabSingleMode.classList.toggle('active', mode === 'single');
+      tabDualMode.classList.toggle('active', mode === 'dual');
+      if (tabSupplierMode) tabSupplierMode.classList.toggle('active', mode === 'supplier');
+
+      singleDropzoneWrapper.style.display = mode === 'single' ? 'block' : 'none';
+      dualDropzoneWrapper.style.display = mode === 'dual' ? 'block' : 'none';
+      if (supplierDropzoneWrapper) supplierDropzoneWrapper.style.display = mode === 'supplier' ? 'block' : 'none';
+
+      updateLabelsForMode();
       populateSheetDropdowns();
-      runReconciliationIfReady();
-    });
 
-    tabDualMode.addEventListener('click', () => {
-      currentMode = 'dual';
-      tabDualMode.classList.add('active');
-      tabSingleMode.classList.remove('active');
-      singleDropzoneWrapper.style.display = 'none';
-      dualDropzoneWrapper.style.display = 'block';
-      populateSheetDropdowns();
-      runReconciliationIfReady();
-    });
+      // Ensure that if current mode has no files loaded yet, stale results are cleanly hidden
+      const isReady = (mode === 'single' && singleWorkbook) ||
+                      (mode === 'dual' && qbWorkbook && wipWorkbook) ||
+                      (mode === 'supplier' && supplierPdfResult && supplierQbWorkbook);
 
-    // Dropzone setup helper
+      if (isReady) {
+        runReconciliationIfReady();
+      } else {
+        document.getElementById('metricsSection').style.display = 'none';
+        document.getElementById('resultsCard').style.display = 'none';
+      }
+    }
+
+    tabSingleMode.addEventListener('click', () => switchMode('single'));
+    tabDualMode.addEventListener('click', () => switchMode('dual'));
+    if (tabSupplierMode) {
+      tabSupplierMode.addEventListener('click', () => switchMode('supplier'));
+    }
+
+    // Dropzone setup helper for Excel files
     function setupDropzone(dropzoneEl, inputEl, nameEl, onFileLoaded) {
+      if (!dropzoneEl || !inputEl) return;
       dropzoneEl.addEventListener('click', () => inputEl.click());
-      
+
       dropzoneEl.addEventListener('dragover', (e) => {
         e.preventDefault();
         dropzoneEl.classList.add('drag-over');
@@ -1397,6 +2098,7 @@
       });
 
       function processFile(file) {
+        if (!file) return;
         if (nameEl) {
           nameEl.innerText = file.name;
           nameEl.style.display = 'inline-block';
@@ -1404,11 +2106,76 @@
         dropzoneEl.classList.add('loaded');
         const reader = new FileReader();
         reader.onload = (e) => {
-          const data = new Uint8Array(e.target.result);
-          const workbook = XLSX.read(data, { type: 'array' });
-          onFileLoaded(workbook);
+          try {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            onFileLoaded(workbook);
+          } catch (err) {
+            console.error('Error reading Excel spreadsheet:', err);
+            alert(`Could not parse "${file.name}" as an Excel spreadsheet. Please ensure it is a valid .xlsx or .xls file.`);
+            dropzoneEl.classList.remove('loaded');
+            if (nameEl) nameEl.innerText = `${file.name} (Invalid format)`;
+          }
+        };
+        reader.onerror = (err) => {
+          console.error('FileReader error:', err);
+          alert('Failed to read file: ' + err);
+          dropzoneEl.classList.remove('loaded');
         };
         reader.readAsArrayBuffer(file);
+      }
+    }
+
+    // Dropzone setup helper for PDF statements
+    function setupPdfDropzone(dropzoneEl, inputEl, nameEl, onPdfLoaded) {
+      if (!dropzoneEl || !inputEl) return;
+      dropzoneEl.addEventListener('click', () => inputEl.click());
+
+      dropzoneEl.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropzoneEl.classList.add('drag-over');
+      });
+
+      dropzoneEl.addEventListener('dragleave', () => {
+        dropzoneEl.classList.remove('drag-over');
+      });
+
+      dropzoneEl.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropzoneEl.classList.remove('drag-over');
+        if (e.dataTransfer.files.length) {
+          processPdf(e.dataTransfer.files[0]);
+        }
+      });
+
+      inputEl.addEventListener('change', (e) => {
+        if (e.target.files.length) {
+          processPdf(e.target.files[0]);
+        }
+      });
+
+      async function processPdf(file) {
+        if (!file) return;
+        if (nameEl) {
+          nameEl.innerText = `${file.name} (Extracting...)`;
+          nameEl.style.display = 'inline-block';
+        }
+        dropzoneEl.classList.add('loaded');
+        try {
+          const arrayBuffer = await file.arrayBuffer();
+          const result = await parseSupplierPDF(arrayBuffer);
+          if (nameEl) {
+            nameEl.innerText = `${file.name} (${result.totalLines} lines found)`;
+          }
+          onPdfLoaded(result);
+        } catch (err) {
+          console.error('PDF statement parsing error:', err);
+          alert('Failed to parse supplier PDF statement: ' + err.message);
+          dropzoneEl.classList.remove('loaded');
+          if (nameEl) {
+            nameEl.innerText = `${file.name} (Error parsing)`;
+          }
+        }
       }
     }
 
@@ -1419,6 +2186,7 @@
       document.getElementById('singleFileName'),
       (wb) => {
         singleWorkbook = wb;
+        reviewedRefs.clear();
         populateSheetDropdowns();
         runReconciliationIfReady();
       }
@@ -1431,6 +2199,7 @@
       document.getElementById('qbFileName'),
       (wb) => {
         qbWorkbook = wb;
+        reviewedRefs.clear();
         populateSheetDropdowns();
         runReconciliationIfReady();
       }
@@ -1442,6 +2211,31 @@
       document.getElementById('wipFileName'),
       (wb) => {
         wipWorkbook = wb;
+        reviewedRefs.clear();
+        populateSheetDropdowns();
+        runReconciliationIfReady();
+      }
+    );
+
+    // Supplier mode dropzones
+    setupPdfDropzone(
+      document.getElementById('dropzoneSupplierPDF'),
+      document.getElementById('fileInputSupplierPDF'),
+      document.getElementById('supplierPdfName'),
+      (result) => {
+        supplierPdfResult = result;
+        reviewedRefs.clear();
+        runReconciliationIfReady();
+      }
+    );
+
+    setupDropzone(
+      document.getElementById('dropzoneSupplierQB'),
+      document.getElementById('fileInputSupplierQB'),
+      document.getElementById('supplierQbName'),
+      (wb) => {
+        supplierQbWorkbook = wb;
+        reviewedRefs.clear();
         populateSheetDropdowns();
         runReconciliationIfReady();
       }
@@ -1463,66 +2257,212 @@
       renderDiscrepanciesTable();
     });
 
+    function detectSheets(sheetNames) {
+      if (!sheetNames || !sheetNames.length) return { qbSheetName: '', wipSheetName: '' };
+      if (sheetNames.length === 1) return { qbSheetName: sheetNames[0], wipSheetName: sheetNames[0] };
+
+      let qb = sheetNames.find(s => {
+        const l = s.toLowerCase();
+        return (l.includes('quickbook') || l.includes('qb')) && !l.includes('wip');
+      });
+      if (!qb) {
+        qb = sheetNames.find(s => s.toLowerCase().includes('quickbook') || s.toLowerCase().includes('qb'));
+      }
+      if (!qb) {
+        qb = sheetNames[0];
+      }
+
+      const remaining = sheetNames.filter(s => s !== qb);
+      let wip = remaining.find(s => {
+        const l = s.toLowerCase();
+        return l.includes('wip') || l.includes('ledger');
+      });
+      if (!wip) {
+        wip = remaining[0];
+      }
+
+      return { qbSheetName: qb, wipSheetName: wip };
+    }
+
     function populateSheetDropdowns() {
       const qbSelect = document.getElementById('selectQBSheet');
       const wipSelect = document.getElementById('selectWIPSheet');
 
-      qbSelect.innerHTML = '<option value="">Auto-Detect</option>';
-      wipSelect.innerHTML = '<option value="">Auto-Detect</option>';
+      function appendOpt(selectEl, val, label, selected = false) {
+        const opt = document.createElement('option');
+        opt.value = val;
+        opt.textContent = label;
+        if (selected) opt.selected = true;
+        selectEl.appendChild(opt);
+      }
+
+      qbSelect.innerHTML = '';
+      wipSelect.innerHTML = '';
+      appendOpt(qbSelect, '', 'Auto-Detect');
+      appendOpt(wipSelect, '', 'Auto-Detect');
 
       if (currentMode === 'single' && singleWorkbook) {
+        const { qbSheetName, wipSheetName } = detectSheets(singleWorkbook.SheetNames);
         singleWorkbook.SheetNames.forEach(name => {
-          qbSelect.innerHTML += `<option value="${name}">${name}</option>`;
-          wipSelect.innerHTML += `<option value="${name}">${name}</option>`;
+          appendOpt(qbSelect, name, name, name === qbSheetName);
+          appendOpt(wipSelect, name, name, name === wipSheetName);
         });
       } else if (currentMode === 'dual') {
         if (qbWorkbook) {
           qbWorkbook.SheetNames.forEach(name => {
-            qbSelect.innerHTML += `<option value="${name}">${name}</option>`;
+            appendOpt(qbSelect, name, name);
           });
         }
         if (wipWorkbook) {
           wipWorkbook.SheetNames.forEach(name => {
-            wipSelect.innerHTML += `<option value="${name}">${name}</option>`;
+            appendOpt(wipSelect, name, name);
           });
         }
+      } else if (currentMode === 'supplier') {
+        if (supplierQbWorkbook) {
+          supplierQbWorkbook.SheetNames.forEach(name => {
+            appendOpt(qbSelect, name, name);
+          });
+        }
+        wipSelect.innerHTML = '';
+        appendOpt(wipSelect, '', 'Extracted from PDF Statement');
       }
     }
 
     function cleanNumber(val) {
-      if (typeof val === 'number') return val;
+      if (typeof val === 'number') return isNaN(val) ? 0 : val;
       if (!val) return 0;
-      const cleanStr = String(val).replace(/[^0-9.-]+/g, '');
-      return parseFloat(cleanStr) || 0;
+      let s = String(val).trim();
+      if (!s) return 0;
+
+      // Check if negative: accounting parentheses (1,234.56), trailing minus 1,234.56-, leading minus, or Cr
+      const isNegative = (s.includes('(') && s.includes(')')) ||
+                         s.endsWith('-') ||
+                         s.startsWith('-') ||
+                         /\bcr\b/i.test(s);
+
+      // Strip currency markers and outer parentheses
+      s = s.replace(/^[A-Za-z\s$€£Rp]+/, '')
+           .replace(/[A-Za-z\s()]+$/, '')
+           .trim();
+
+      const lastDot = s.lastIndexOf('.');
+      const lastComma = s.lastIndexOf(',');
+
+      if (lastDot !== -1 && lastComma !== -1) {
+        if (lastComma > lastDot) {
+          // European format: 1.234,56 -> 1234.56
+          s = s.replace(/\./g, '').replace(',', '.');
+        } else {
+          // Standard US format: 1,234.56 -> 1234.56
+          s = s.replace(/,/g, '');
+        }
+      } else if (lastDot !== -1) {
+        const dotsCount = (s.match(/\./g) || []).length;
+        if (dotsCount > 1) {
+          // Multiple dots (Indonesian/European thousand separator: 1.500.000)
+          s = s.replace(/\./g, '');
+        }
+      } else if (lastComma !== -1) {
+        const commaCount = (s.match(/,/g) || []).length;
+        if (commaCount > 1) {
+          // Multiple commas: 1,500,000
+          s = s.replace(/,/g, '');
+        } else {
+          const afterComma = s.substring(lastComma + 1);
+          if (afterComma.length === 2 || afterComma.length === 1) {
+            s = s.replace(',', '.');
+          } else {
+            s = s.replace(',', '');
+          }
+        }
+      }
+
+      const cleanStr = s.replace(/[^0-9.]+/g, '');
+      const num = parseFloat(cleanStr);
+      if (isNaN(num)) return 0;
+      return isNegative ? -Math.abs(num) : Math.abs(num);
     }
 
     function parseTransactionsFromSheet(sheet) {
       if (!sheet) return { map: new Map(), totalAmount: 0, totalLines: 0 };
       const raw = XLSX.utils.sheet_to_json(sheet, { header: 1 });
       let headerIdx = -1;
-      let colNo = -1, colAmt = -1, colDate = -1, colDesc = -1;
+      let colNo = -1, colAmt = -1, colDebit = -1, colCredit = -1, colDate = -1, colDesc = -1;
 
-      // Scan first 20 rows for headers
-      for (let i = 0; i < Math.min(raw.length, 20); i++) {
+      // Scan first 25 rows for headers with priority
+      for (let i = 0; i < Math.min(raw.length, 25); i++) {
         const row = raw[i];
         if (!row || !Array.isArray(row)) continue;
+
+        let curColNo = -1, curColAmt = -1, curColDebit = -1, curColCredit = -1, curColDate = -1, curColDesc = -1;
+        let highestRefPriority = 0;
+        let highestAmtPriority = 0;
+
         for (let j = 0; j < row.length; j++) {
-          const val = String(row[j] || '').trim().toLowerCase();
-          if (val === 'no.' || val === 'no' || val === 'ref no' || val === 'reference' || val === 'num' || val === 'ref' || val === 'doc no' || val === 'transaction') colNo = j;
-          if (val === 'amount' || val === 'amt' || val === 'nominal' || val === 'net amount' || val === 'total') colAmt = j;
-          if (val === 'date' || val === 'tanggal' || val === 'trans date') colDate = j;
-          if (val === 'memo' || val === 'description' || val === 'desc' || val === 'name' || val === 'vendor' || val === 'particulars') colDesc = j;
+          const rawVal = String(row[j] || '').trim();
+          if (!rawVal) continue;
+          const val = rawVal.toLowerCase()
+            .replace(/\s*\([^)]*\)/g, '') // remove parenthesized units like (AED), (USD), (Dr), (Cr)
+            .replace(/\s+in\s+[a-z]{3}/gi, '') // remove "in AED", "in USD"
+            .replace(/[.:#]/g, '') // strip trailing symbols
+            .replace(/\s+/g, ' ')
+            .trim();
+
+          // Reference / Voucher matching (prioritize specific ref/num/voucher over generic 'no')
+          if (val === 'num' || val === 'ref no' || val === 'ref' || val === 'reference no' || val === 'reference' || val === 'voucher' || val === 'voucher no' || val === 'vch no' || val === 'doc no' || val === 'invoice no' || val === 'inv no' || val === 'bill no') {
+            if (highestRefPriority < 3) { curColNo = j; highestRefPriority = 3; }
+          } else if (val === 'trans no' || val === 'trans' || val === 'transaction' || val === 'document') {
+            if (highestRefPriority < 2) { curColNo = j; highestRefPriority = 2; }
+          } else if (val === 'no') {
+            if (highestRefPriority < 1) { curColNo = j; highestRefPriority = 1; }
+          }
+
+          // Amount matching: strictly prioritize explicit amount over running balance
+          if (val === 'amount' || val === 'net amount' || val === 'amt' || val === 'nominal') {
+            if (highestAmtPriority < 3) { curColAmt = j; highestAmtPriority = 3; }
+          } else if (val === 'debit' || val === 'dr' || val === 'masuk') {
+            curColDebit = j;
+          } else if (val === 'credit' || val === 'cr' || val === 'keluar') {
+            curColCredit = j;
+          } else if (val === 'open balance') {
+            if (highestAmtPriority < 2) { curColAmt = j; highestAmtPriority = 2; }
+          } else if (val === 'total' || val === 'balance') {
+            if (highestAmtPriority < 1) { curColAmt = j; highestAmtPriority = 1; }
+          }
+
+          // Date matching
+          if (val === 'date' || val === 'tanggal' || val === 'trans date' || val === 'tx date' || val === 'posting date') {
+            curColDate = j;
+          }
+
+          // Memo / Description matching
+          if (val === 'memo' || val === 'description' || val === 'desc' || val === 'particulars' || val === 'name' || val === 'vendor' || val === 'payee') {
+            if (curColDesc === -1 || val === 'memo' || val === 'description' || val === 'particulars') {
+              curColDesc = j;
+            }
+          }
         }
-        if (colNo !== -1 && colAmt !== -1) {
+
+        const hasAmount = curColAmt !== -1 || (curColDebit !== -1 && curColCredit !== -1);
+        if (curColNo !== -1 && hasAmount) {
           headerIdx = i;
+          colNo = curColNo;
+          colAmt = curColAmt;
+          colDebit = curColDebit;
+          colCredit = curColCredit;
+          colDate = curColDate;
+          colDesc = curColDesc;
           break;
         }
       }
 
       // Fallback if header not identified
-      if (colNo === -1) colNo = 0;
-      if (colAmt === -1) colAmt = 1;
-      if (headerIdx === -1) headerIdx = 0;
+      if (headerIdx === -1) {
+        headerIdx = 0;
+        if (colNo === -1) colNo = 0;
+        if (colAmt === -1) colAmt = (colDebit !== -1 && colCredit !== -1) ? -1 : 1;
+      }
 
       const map = new Map();
       let totalAmount = 0;
@@ -1530,24 +2470,72 @@
 
       for (let i = headerIdx + 1; i < raw.length; i++) {
         const row = raw[i];
-        if (!row) continue;
-        const refNo = String(row[colNo] !== undefined && row[colNo] !== null ? row[colNo] : '').trim();
-        const dateVal = colDate !== -1 && row[colDate] !== undefined ? String(row[colDate]).trim() : '';
+        if (!row || !Array.isArray(row) || row.length === 0) continue;
+
+        let refNo = String(row[colNo] !== undefined && row[colNo] !== null ? row[colNo] : '').trim();
+        const dateVal = colDate !== -1 && row[colDate] !== undefined ? formatDateCell(row[colDate]) : '';
         const descVal = colDesc !== -1 && row[colDesc] !== undefined ? String(row[colDesc]).trim() : '';
-        const rawAmt = row[colAmt];
-        const amt = cleanNumber(rawAmt);
 
-        // Skip metadata / blanks / summary totals
-        if (!refNo || dateVal.toLowerCase() === 'beginning balance' || isNaN(amt) || rawAmt === undefined) continue;
+        let amt = 0;
+        if (colAmt !== -1) {
+          const rawAmt = row[colAmt];
+          if (rawAmt === undefined || rawAmt === null || rawAmt === '') continue;
+          amt = cleanNumber(rawAmt);
+        } else if (colDebit !== -1 && colCredit !== -1) {
+          const rawDr = row[colDebit];
+          const rawCr = row[colCredit];
+          if ((rawDr === undefined || rawDr === null || rawDr === '') &&
+              (rawCr === undefined || rawCr === null || rawCr === '')) continue;
+          const dr = cleanNumber(rawDr);
+          const cr = cleanNumber(rawCr);
+          amt = dr - cr;
+        } else {
+          continue;
+        }
 
-        totalAmount += amt;
+        if (isNaN(amt) || !refNo) continue;
+
+        const lowerRef = refNo.toLowerCase();
+        const lowerDate = dateVal.toLowerCase();
+        const lowerDesc = descVal.toLowerCase();
+
+        // Check if explicit subtotal/total row (be careful NOT to drop real vendors like "Total Energies")
+        const isSubtotalRef = lowerRef === 'total' || lowerRef === 'grand total' || lowerRef === 'subtotal' ||
+                              lowerRef.startsWith('total for ') || lowerRef.startsWith('total - ') || lowerRef.startsWith('subtotal for ');
+        const isSubtotalDesc = lowerDesc === 'total' || lowerDesc === 'grand total' || lowerDesc === 'subtotal' ||
+                               lowerDesc.startsWith('total for ') || lowerDesc.startsWith('total - ') || lowerDesc.startsWith('subtotal for ');
+        const isBeginningBalance = lowerRef.includes('beginning balance') || lowerDesc.includes('beginning balance') || lowerDate.includes('beginning balance') ||
+                                   lowerRef.includes('opening balance') || lowerDesc.includes('opening balance') || lowerDate.includes('opening balance');
+
+        if (isSubtotalRef || isBeginningBalance) {
+          continue;
+        }
+
+        // A subtotal in description is only skipped if there is no genuine date, or it's an explicit total marker
+        if (isSubtotalDesc && (!dateVal || dateVal === '-' || lowerDate.includes('total'))) {
+          continue;
+        }
+
+        // Summary row marker check
+        const isSummaryRow = row.some(cell => {
+          const s = String(cell || '').trim().toLowerCase();
+          return s === 'grand total' || s === 'total';
+        });
+        if (isSummaryRow && (!dateVal || dateVal === '-' || lowerDate.includes('total') || isSubtotalRef)) {
+          continue;
+        }
+
+        refNo = normalizeRef(refNo);
+
+        amt = Math.round(amt * 100) / 100;
+        totalAmount = Math.round((totalAmount + amt) * 100) / 100;
         totalLines++;
 
         if (!map.has(refNo)) {
           map.set(refNo, { sum: 0, count: 0, rows: [] });
         }
         const curr = map.get(refNo);
-        curr.sum += amt;
+        curr.sum = Math.round((curr.sum + amt) * 100) / 100;
         curr.count += 1;
         curr.rows.push({
           date: dateVal || '-',
@@ -1563,32 +2551,58 @@
     let lastWIPResult = null;
 
     function runReconciliationIfReady() {
-      let qbSheet = null;
-      let wipSheet = null;
+      let qbResult = null;
+      let wipResult = null;
 
       const qbSelectVal = document.getElementById('selectQBSheet').value;
       const wipSelectVal = document.getElementById('selectWIPSheet').value;
 
       if (currentMode === 'single') {
         if (!singleWorkbook) return;
-        const qbSheetName = qbSelectVal || singleWorkbook.SheetNames.find(s => s.toLowerCase().includes('quickbook') || s.toLowerCase().includes('qb')) || singleWorkbook.SheetNames[0];
-        const wipSheetName = wipSelectVal || singleWorkbook.SheetNames.find(s => s.toLowerCase().includes('wip') || s.toLowerCase().includes('ledger')) || singleWorkbook.SheetNames[1] || singleWorkbook.SheetNames[0];
+        if (singleWorkbook.SheetNames.length < 2) {
+          alert(`The selected workbook ("${singleWorkbook.SheetNames[0]}") contains only 1 sheet. Single Workbook mode requires two distinct sheets (one for QuickBooks and one for WIP Ledger). If your reports are in separate files, please switch to the "Dual Files" tab.`);
+          return;
+        }
+        const { qbSheetName: autoQB, wipSheetName: autoWIP } = detectSheets(singleWorkbook.SheetNames);
+        const qbSheetName = qbSelectVal || autoQB;
+        const wipSheetName = wipSelectVal || autoWIP;
 
-        qbSheet = singleWorkbook.Sheets[qbSheetName];
-        wipSheet = singleWorkbook.Sheets[wipSheetName];
-      } else {
+        if (qbSheetName === wipSheetName) {
+          alert('QuickBooks Sheet and WIP Ledger Sheet cannot be the same sheet. Please select two distinct sheets from the Settings panel.');
+          return;
+        }
+
+        const qbSheet = singleWorkbook.Sheets[qbSheetName];
+        const wipSheet = singleWorkbook.Sheets[wipSheetName];
+        if (!qbSheet || !wipSheet) return;
+
+        qbResult = parseTransactionsFromSheet(qbSheet);
+        wipResult = parseTransactionsFromSheet(wipSheet);
+      } else if (currentMode === 'dual') {
         if (!qbWorkbook || !wipWorkbook) return;
         const qbSheetName = qbSelectVal || qbWorkbook.SheetNames.find(s => s.toLowerCase().includes('quickbook') || s.toLowerCase().includes('qb')) || qbWorkbook.SheetNames[0];
         const wipSheetName = wipSelectVal || wipWorkbook.SheetNames.find(s => s.toLowerCase().includes('wip') || s.toLowerCase().includes('ledger')) || wipWorkbook.SheetNames[0];
 
-        qbSheet = qbWorkbook.Sheets[qbSheetName];
-        wipSheet = wipWorkbook.Sheets[wipSheetName];
+        const qbSheet = qbWorkbook.Sheets[qbSheetName];
+        const wipSheet = wipWorkbook.Sheets[wipSheetName];
+        if (!qbSheet || !wipSheet) return;
+
+        qbResult = parseTransactionsFromSheet(qbSheet);
+        wipResult = parseTransactionsFromSheet(wipSheet);
+      } else if (currentMode === 'supplier') {
+        if (!supplierPdfResult || !supplierQbWorkbook) return;
+        const qbSheetName = qbSelectVal || supplierQbWorkbook.SheetNames.find(s => s.toLowerCase().includes('quickbook') || s.toLowerCase().includes('qb') || s.toLowerCase().includes('supplier') || s.toLowerCase().includes('balance') || s.toLowerCase().includes('sheet')) || supplierQbWorkbook.SheetNames[0];
+        const qbSheet = supplierQbWorkbook.Sheets[qbSheetName];
+        if (!qbSheet) return;
+
+        qbResult = parseTransactionsFromSheet(qbSheet);
+        wipResult = supplierPdfResult;
       }
 
-      if (!qbSheet || !wipSheet) return;
+      if (!qbResult || !wipResult) return;
 
-      lastQBResult = parseTransactionsFromSheet(qbSheet);
-      lastWIPResult = parseTransactionsFromSheet(wipSheet);
+      lastQBResult = qbResult;
+      lastWIPResult = wipResult;
 
       const tolerance = parseFloat(document.getElementById('selectTolerance').value) || 0.01;
       const allKeys = new Set([...lastQBResult.map.keys(), ...lastWIPResult.map.keys()]);
@@ -1608,10 +2622,10 @@
 
           if (qbEntry.count === 0) {
             statusType = 'missing_qb';
-            statusLabel = 'Missing in QB (In WIP only)';
+            statusLabel = currentMode === 'supplier' ? 'Missing in QB (Unbooked)' : 'Missing in QB (In WIP only)';
           } else if (wipEntry.count === 0) {
             statusType = 'missing_wip';
-            statusLabel = 'Missing in WIP (In QB only)';
+            statusLabel = currentMode === 'supplier' ? 'Missing in Supplier PDF' : 'Missing in WIP (In QB only)';
           } else if (!isAmountDiff && isCountDiff) {
             statusType = 'line_diff';
             statusLabel = 'Line Count Diff Only';
@@ -1639,9 +2653,135 @@
       document.getElementById('metricsSection').style.display = 'block';
       document.getElementById('resultsCard').style.display = 'block';
 
+      currentPage = 1;
+      updateLabelsForMode();
       updateMetricsDisplay();
       updateFilterCounts();
       renderDiscrepanciesTable();
+    }
+
+    // Accountant Workflow State
+    const reviewedRefs = new Set();
+    let currentSortCol = 'variance';
+    let currentSortDir = 'desc';
+    let tablePageSize = 'all'; // 'all' | '100' | '50' | '25'
+    let currentModalItem = null;
+
+    function showToast(message) {
+      const toast = document.getElementById('toastNotification');
+      const msgEl = document.getElementById('toastMessage');
+      if (!toast || !msgEl) return;
+      msgEl.innerText = message;
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 1600);
+    }
+
+    function copyToClipboard(text, customMsg) {
+      if (!text) return;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(String(text)).then(() => {
+          showToast(customMsg || `Copied: ${text}`);
+        }).catch(() => {
+          fallbackCopy(text, customMsg);
+        });
+      } else {
+        fallbackCopy(text, customMsg);
+      }
+    }
+
+    function fallbackCopy(text, customMsg) {
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = String(text);
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        showToast(customMsg || `Copied: ${text}`);
+      } catch (e) {
+        showToast(customMsg || `Copied: ${text}`);
+      }
+    }
+
+    function updateReviewCounterBadge() {
+      const badge = document.getElementById('reviewedCounterBadge');
+      const textEl = document.getElementById('reviewedCounterText');
+      if (!badge || !textEl) return;
+
+      const total = allDiscrepancies.length;
+      if (total === 0) {
+        badge.style.display = 'none';
+        return;
+      }
+
+      badge.style.display = 'inline-flex';
+      const reviewedCount = allDiscrepancies.filter(d => reviewedRefs.has(d.ref)).length;
+      textEl.innerText = `${reviewedCount} of ${total} Reviewed`;
+    }
+
+    function updateSortArrowDisplay() {
+      ['ref', 'qbSum', 'qbLines', 'wipSum', 'wipLines', 'variance', 'statusLabel'].forEach(col => {
+        const arrow = document.getElementById(`arrow-${col}`);
+        if (!arrow) return;
+        if (currentSortCol === col) {
+          arrow.innerText = currentSortDir === 'asc' ? ' ▲' : ' ▼';
+        } else {
+          arrow.innerText = '';
+        }
+      });
+    }
+
+    function updateLabelsForMode() {
+      const isSupplier = currentMode === 'supplier';
+
+      // Metric card tags
+      const tagQB = document.querySelector('#metricsSection .metric-card:nth-child(1) .metric-tag');
+      const tagWIP = document.querySelector('#metricsSection .metric-card:nth-child(2) .metric-tag');
+      const tagVar = document.querySelector('#metricVarianceCard .metric-tag');
+
+      if (tagQB) tagQB.innerHTML = `<span class="petal-accent"></span>${isSupplier ? 'QuickBooks SOA Total' : 'QuickBooks Total'}`;
+      if (tagWIP) tagWIP.innerHTML = `<span class="petal-accent"></span>${isSupplier ? 'Supplier Statement Total' : 'WIP Ledger Total'}`;
+      if (tagVar) tagVar.innerHTML = `<span class="petal-accent"></span>${isSupplier ? 'Net Variance (QB - Supplier)' : 'Net Variance (QB - WIP)'}`;
+
+      // Table headers
+      const thRef = document.querySelector('.table-container table thead th[data-sort="ref"]');
+      const thWipSum = document.querySelector('.table-container table thead th[data-sort="wipSum"]');
+      const thWipLines = document.querySelector('.table-container table thead th[data-sort="wipLines"]');
+      const thVar = document.querySelector('.table-container table thead th[data-sort="variance"]');
+
+      if (thRef) thRef.childNodes[0].textContent = isSupplier ? 'Voucher / Ref No. ' : 'Reference (No.) ';
+      if (thWipSum) thWipSum.childNodes[0].textContent = isSupplier ? 'Supplier Total ' : 'WIP Total ';
+      if (thWipLines) thWipLines.childNodes[0].textContent = isSupplier ? 'Supplier Lines ' : 'WIP Lines ';
+      if (thVar) thVar.childNodes[0].textContent = isSupplier ? 'Variance (QB - Supplier) ' : 'Variance (QB - WIP) ';
+
+      // Filter chips text
+      const chipMissingQB = document.querySelector('[data-filter="missing_qb"]');
+      const chipMissingWIP = document.querySelector('[data-filter="missing_wip"]');
+      if (chipMissingQB) {
+        chipMissingQB.innerHTML = `${isSupplier ? 'Missing in QB (Unbooked)' : 'Missing in QB'} (<span id="countMissingQB">0</span>)`;
+      }
+      if (chipMissingWIP) {
+        chipMissingWIP.innerHTML = `${isSupplier ? 'Missing in Supplier' : 'Missing in WIP'} (<span id="countMissingWIP">0</span>)`;
+      }
+
+      // Modal summary labels
+      const summaryLabels = document.querySelectorAll('.drilldown-summary .summary-box-label');
+      if (summaryLabels.length >= 3) {
+        summaryLabels[0].innerText = 'QuickBooks Total';
+        summaryLabels[1].innerText = isSupplier ? 'Supplier Statement Total' : 'WIP Ledger Total';
+        summaryLabels[2].innerText = isSupplier ? 'Variance (QB - Supplier)' : 'Variance (QB - WIP)';
+      }
+
+      // Modal WIP panel title
+      const modalWIPTitle = document.querySelector('#panelWIP .drilldown-panel-title span');
+      if (modalWIPTitle && modalWIPTitle.childNodes.length) {
+        modalWIPTitle.childNodes[0].textContent = isSupplier ? 'Supplier Statement Lines ' : 'WIP Ledger Lines ';
+      }
     }
 
     function updateMetricsDisplay() {
@@ -1659,6 +2799,7 @@
 
       netElem.innerText = formatMoney(netVariance);
 
+      const isSupplier = currentMode === 'supplier';
       if (Math.abs(netVariance) <= 0.01) {
         cardElem.className = 'metric-card sage';
         netElem.className = 'metric-amount badge-variance-balanced';
@@ -1666,7 +2807,11 @@
       } else {
         cardElem.className = 'metric-card rose';
         netElem.className = 'metric-amount badge-variance-alert';
-        statusElem.innerText = netVariance > 0 ? 'Surplus in QuickBooks' : 'Deficit in QuickBooks';
+        if (isSupplier) {
+          statusElem.innerText = netVariance > 0 ? 'Surplus in QuickBooks' : 'Deficit in QB (Unbooked Invoices)';
+        } else {
+          statusElem.innerText = netVariance > 0 ? 'Surplus in QuickBooks' : 'Deficit in QuickBooks';
+        }
       }
     }
 
@@ -1685,19 +2830,45 @@
       document.querySelectorAll('.chip-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       currentFilter = btn.getAttribute('data-filter');
+      currentPage = 1;
       renderDiscrepanciesTable();
     });
 
-    // Search Input
+    // Search Input with 150ms debounce
     document.getElementById('searchInput').addEventListener('input', (e) => {
-      searchQuery = e.target.value.trim().toLowerCase();
+      clearTimeout(searchDebounceTimer);
+      const val = e.target.value;
+      searchDebounceTimer = setTimeout(() => {
+        searchQuery = val.trim().toLowerCase();
+        currentPage = 1;
+        renderDiscrepanciesTable();
+      }, 150);
+    });
+
+    // Page Size Selector
+    document.getElementById('selectPageSize').addEventListener('change', (e) => {
+      tablePageSize = e.target.value;
+      currentPage = 1;
       renderDiscrepanciesTable();
     });
 
-    function renderDiscrepanciesTable() {
-      const tbody = document.getElementById('discrepancyTableBody');
-      tbody.innerHTML = '';
+    // Column Header Sorting Event
+    document.querySelectorAll('.table-container table thead th.sortable-th').forEach(th => {
+      th.addEventListener('click', () => {
+        const col = th.getAttribute('data-sort');
+        if (!col) return;
+        if (currentSortCol === col) {
+          currentSortDir = currentSortDir === 'desc' ? 'asc' : 'desc';
+        } else {
+          currentSortCol = col;
+          currentSortDir = (col === 'ref' || col === 'statusLabel') ? 'asc' : 'desc';
+        }
+        currentPage = 1;
+        renderDiscrepanciesTable();
+      });
+    });
 
+    function getFilteredAndSortedDiscrepancies() {
       let filtered = allDiscrepancies;
       if (currentFilter !== 'all') {
         filtered = filtered.filter(item => item.statusType === currentFilter);
@@ -1706,19 +2877,52 @@
         filtered = filtered.filter(item => item.ref.toLowerCase().includes(searchQuery));
       }
 
-      document.getElementById('discrepancyCountSubtitle').innerText = 
-        `Showing ${filtered.length} of ${allDiscrepancies.length} discrepancies`;
+      return [...filtered].sort((a, b) => {
+        let valA = a[currentSortCol];
+        let valB = b[currentSortCol];
+
+        if (currentSortCol === 'variance') {
+          valA = Math.abs(Number(valA) || 0);
+          valB = Math.abs(Number(valB) || 0);
+        } else if (currentSortCol === 'qbSum' || currentSortCol === 'wipSum' || currentSortCol === 'qbLines' || currentSortCol === 'wipLines') {
+          valA = Number(valA) || 0;
+          valB = Number(valB) || 0;
+        }
+
+        if (typeof valA === 'string') {
+          return currentSortDir === 'asc'
+            ? valA.localeCompare(valB || '', undefined, { numeric: true, sensitivity: 'base' })
+            : (valB || '').localeCompare(valA, undefined, { numeric: true, sensitivity: 'base' });
+        }
+        return currentSortDir === 'asc' ? valA - valB : valB - valA;
+      });
+    }
+
+    function renderDiscrepanciesTable() {
+      const tbody = document.getElementById('discrepancyTableBody');
+      const paginationBar = document.getElementById('paginationBar');
+      const paginationButtonsWrap = document.getElementById('paginationButtonsWrap');
+      tbody.innerHTML = '';
+
+      const items = getFilteredAndSortedDiscrepancies();
+
+      document.getElementById('discrepancyCountSubtitle').innerText =
+        `Showing ${items.length} of ${allDiscrepancies.length} discrepancies`;
+
+      updateReviewCounterBadge();
+      updateSortArrowDisplay();
 
       if (allDiscrepancies.length === 0) {
+        if (paginationBar) paginationBar.style.display = 'none';
         tbody.innerHTML = `
           <tr>
-            <td colspan="8">
+            <td colspan="9">
               <div class="empty-state-perfect">
                 <div class="empty-state-icon">
                   <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 6L9 17l-5-5"/></svg>
                 </div>
                 <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.15rem; color: var(--sage-600); margin-bottom: 0.35rem;">Perfect Match! All Records Balanced</h3>
-                <p style="font-size: 0.85rem; color: var(--slate-muted);">No amount variances or line count discrepancies were found between QuickBooks and WIP Ledger.</p>
+                <p style="font-size: 0.85rem; color: var(--slate-muted);">No amount variances or line count discrepancies were found between QuickBooks and the counterpart records.</p>
               </div>
             </td>
           </tr>
@@ -1726,10 +2930,11 @@
         return;
       }
 
-      if (filtered.length === 0) {
+      if (items.length === 0) {
+        if (paginationBar) paginationBar.style.display = 'none';
         tbody.innerHTML = `
           <tr>
-            <td colspan="8" style="text-align: center; padding: 2.5rem; color: var(--slate-muted); font-size: 0.85rem;">
+            <td colspan="9" style="text-align: center; padding: 2.5rem; color: var(--slate-muted); font-size: 0.85rem;">
               No discrepancies match your search or selected filter.
             </td>
           </tr>
@@ -1737,9 +2942,50 @@
         return;
       }
 
-      filtered.forEach(item => {
+      // Handle Pagination vs Full Continuous Scroll
+      let pageItems = items;
+      let isPaginated = tablePageSize !== 'all';
+      let numPageSize = parseInt(tablePageSize, 10) || 50;
+
+      if (isPaginated) {
+        const totalPages = Math.ceil(items.length / numPageSize) || 1;
+        if (currentPage > totalPages) currentPage = totalPages;
+        if (currentPage < 1) currentPage = 1;
+
+        const startIndex = (currentPage - 1) * numPageSize;
+        const endIndex = Math.min(startIndex + numPageSize, items.length);
+        pageItems = items.slice(startIndex, endIndex);
+
+        if (paginationBar) {
+          paginationBar.style.display = 'flex';
+          document.getElementById('paginationInfo').innerText =
+            `Showing ${startIndex + 1} to ${endIndex} of ${items.length} discrepancies`;
+          if (paginationButtonsWrap) paginationButtonsWrap.style.display = 'flex';
+          document.getElementById('paginationPageNum').innerText =
+            `Page ${currentPage} of ${totalPages}`;
+          document.getElementById('btnPrevPage').disabled = currentPage === 1;
+          document.getElementById('btnNextPage').disabled = currentPage === totalPages;
+          document.getElementById('btnPrevPage').style.opacity = currentPage === 1 ? '0.5' : '1';
+          document.getElementById('btnNextPage').style.opacity = currentPage === totalPages ? '0.5' : '1';
+        }
+      } else {
+        // Continuous Scroll with Ctrl+F
+        if (paginationBar) {
+          paginationBar.style.display = 'flex';
+          document.getElementById('paginationInfo').innerText =
+            `Showing all ${items.length} discrepancies (Full scroll view & Ctrl+F supported)`;
+          if (paginationButtonsWrap) paginationButtonsWrap.style.display = 'none';
+        }
+      }
+
+      // Render rows with DocumentFragment for performance
+      const fragment = document.createDocumentFragment();
+
+      pageItems.forEach(item => {
         const tr = document.createElement('tr');
-        tr.addEventListener('click', () => openDrilldownModal(item));
+        tr.setAttribute('data-ref', item.ref);
+        const isReviewed = reviewedRefs.has(item.ref);
+        if (isReviewed) tr.classList.add('row-reviewed');
 
         let badgeClass = 'status-mismatch';
         if (item.statusType === 'missing_qb') badgeClass = 'status-missing-qb';
@@ -1747,7 +2993,15 @@
         else if (item.statusType === 'line_diff') badgeClass = 'status-line-diff';
 
         tr.innerHTML = `
-          <td><span class="ref-code"><span class="petal-accent"></span>${escapeHtml(item.ref)}</span></td>
+          <td class="td-checkbox" title="Click to toggle reviewed status">
+            <input type="checkbox" class="audit-checkbox" data-ref="${escapeHtml(item.ref)}" ${isReviewed ? 'checked' : ''}>
+          </td>
+          <td>
+            <span class="ref-code" data-copy-ref="${escapeHtml(item.ref)}" title="Click to copy voucher reference">
+              <span class="petal-accent"></span>${escapeHtml(item.ref)}
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity: 0.5; margin-left: 2px;"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            </span>
+          </td>
           <td>${formatMoney(item.qbSum)}</td>
           <td><span style="color: var(--slate-muted);">${item.qbLines}</span></td>
           <td>${formatMoney(item.wipSum)}</td>
@@ -1757,13 +3011,100 @@
           </td>
           <td><span class="status-badge ${badgeClass}">${item.statusLabel}</span></td>
           <td style="text-align: right;">
-            <button class="action-inspect-btn" onclick="event.stopPropagation(); openDrilldownModalByRef('${escapeHtml(item.ref)}')">
+            <button class="action-inspect-btn btn-inspect-row" data-ref="${escapeHtml(item.ref)}">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
               Inspect
             </button>
           </td>
         `;
-        tbody.appendChild(tr);
+        fragment.appendChild(tr);
+      });
+
+      tbody.appendChild(fragment);
+    }
+
+    // Audit Checkbox change handler (via event delegation)
+    document.getElementById('discrepancyTableBody').addEventListener('change', (e) => {
+      const checkbox = e.target.closest('.audit-checkbox');
+      if (!checkbox) return;
+      const ref = checkbox.getAttribute('data-ref');
+      if (!ref) return;
+
+      if (checkbox.checked) {
+        reviewedRefs.add(ref);
+      } else {
+        reviewedRefs.delete(ref);
+      }
+      const tr = checkbox.closest('tr');
+      if (tr) tr.classList.toggle('row-reviewed', checkbox.checked);
+      updateReviewCounterBadge();
+
+      // If drilldown modal is currently open for this ref, keep its toggle synced
+      if (currentModalItem && currentModalItem.ref === ref) {
+        updateModalAuditUI(checkbox.checked);
+      }
+    });
+
+    // Event delegation on table body (checkbox cell, copy, inspection)
+    document.getElementById('discrepancyTableBody').addEventListener('click', (e) => {
+      // 1. Audit Checkbox cell clicked (toggle checkbox if clicking surrounding cell area)
+      const tdCheckbox = e.target.closest('.td-checkbox');
+      if (tdCheckbox) {
+        e.stopPropagation();
+        const checkbox = tdCheckbox.querySelector('.audit-checkbox');
+        if (checkbox && e.target !== checkbox) {
+          checkbox.checked = !checkbox.checked;
+          checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+        return;
+      }
+
+      // 2. Click on Reference code to copy
+      const copyEl = e.target.closest('[data-copy-ref]');
+      if (copyEl) {
+        e.stopPropagation();
+        const ref = copyEl.getAttribute('data-copy-ref');
+        copyToClipboard(ref, `Copied Reference: ${ref}`);
+        return;
+      }
+
+      // 3. Inspect button
+      const inspectBtn = e.target.closest('.btn-inspect-row');
+      if (inspectBtn) {
+        e.stopPropagation();
+        const ref = inspectBtn.getAttribute('data-ref');
+        if (ref) openDrilldownModalByRef(ref);
+        return;
+      }
+
+      // 4. Click anywhere on row
+      const tr = e.target.closest('tr[data-ref]');
+      if (tr) {
+        const ref = tr.getAttribute('data-ref');
+        if (ref) openDrilldownModalByRef(ref);
+      }
+    });
+
+    // Pagination button handlers
+    const btnPrevPage = document.getElementById('btnPrevPage');
+    const btnNextPage = document.getElementById('btnNextPage');
+    if (btnPrevPage) {
+      btnPrevPage.addEventListener('click', () => {
+        if (currentPage > 1) {
+          currentPage--;
+          renderDiscrepanciesTable();
+        }
+      });
+    }
+    if (btnNextPage) {
+      btnNextPage.addEventListener('click', () => {
+        const items = getFilteredAndSortedDiscrepancies();
+        const numPageSize = parseInt(tablePageSize, 10) || 50;
+        const totalPages = Math.ceil(items.length / numPageSize) || 1;
+        if (currentPage < totalPages) {
+          currentPage++;
+          renderDiscrepanciesTable();
+        }
       });
     }
 
@@ -1777,28 +3118,219 @@
         .replace(/'/g, '&#039;');
     }
 
-    // Drilldown Modal Handling with Discrepancy & Missing Marking
+    // Drilldown Modal Handling with Step-by-Step Navigation
     const drilldownModal = document.getElementById('drilldownModal');
     const modalCloseBtn = document.getElementById('modalCloseBtn');
+    const btnModalPrev = document.getElementById('btnModalPrev');
+    const btnModalNext = document.getElementById('btnModalNext');
+    const btnCopyModalRef = document.getElementById('btnCopyModalRef');
+    const btnModalToggleReviewed = document.getElementById('btnModalToggleReviewed');
 
     modalCloseBtn.addEventListener('click', () => {
       drilldownModal.classList.remove('open');
+      currentModalItem = null;
     });
 
     drilldownModal.addEventListener('click', (e) => {
       if (e.target === drilldownModal) {
         drilldownModal.classList.remove('open');
+        currentModalItem = null;
       }
     });
 
-    window.openDrilldownModalByRef = function(ref) {
+    if (btnCopyModalRef) {
+      btnCopyModalRef.addEventListener('click', () => {
+        if (currentModalItem) {
+          copyToClipboard(currentModalItem.ref, `Copied Reference: ${currentModalItem.ref}`);
+        }
+      });
+    }
+
+    if (btnModalPrev) {
+      btnModalPrev.addEventListener('click', () => {
+        navigateModal(-1);
+      });
+    }
+
+    if (btnModalNext) {
+      btnModalNext.addEventListener('click', () => {
+        navigateModal(1);
+      });
+    }
+
+    function updateModalAuditUI(isReviewed) {
+      const btn = document.getElementById('btnModalToggleReviewed');
+      const cb = document.getElementById('modalReviewedCheckbox');
+      const txt = document.getElementById('modalReviewedText');
+      if (btn) btn.classList.toggle('is-reviewed', isReviewed);
+      if (cb) cb.checked = isReviewed;
+      if (txt) txt.innerText = isReviewed ? 'Reviewed ✓' : 'Mark as Reviewed';
+    }
+
+    function toggleCurrentModalReviewed() {
+      if (!currentModalItem) return;
+      const ref = currentModalItem.ref;
+      const isReviewed = !reviewedRefs.has(ref);
+      if (isReviewed) {
+        reviewedRefs.add(ref);
+      } else {
+        reviewedRefs.delete(ref);
+      }
+      updateModalAuditUI(isReviewed);
+
+      // Sync background table row if rendered
+      const tr = document.querySelector(`#discrepancyTableBody tr[data-ref="${CSS.escape ? CSS.escape(ref) : ref}"]`);
+      if (tr) {
+        tr.classList.toggle('row-reviewed', isReviewed);
+        const cb = tr.querySelector('.audit-checkbox');
+        if (cb) cb.checked = isReviewed;
+      }
+
+      updateReviewCounterBadge();
+    }
+
+    if (btnModalToggleReviewed) {
+      btnModalToggleReviewed.addEventListener('click', () => {
+        toggleCurrentModalReviewed();
+      });
+    }
+
+    // Shortcuts Modal Handlers
+    const shortcutsModal = document.getElementById('shortcutsModal');
+    const btnOpenShortcuts = document.getElementById('btnOpenShortcuts');
+    const shortcutsCloseBtn = document.getElementById('shortcutsCloseBtn');
+
+    function openShortcutsModal() {
+      if (shortcutsModal) shortcutsModal.classList.add('open');
+    }
+
+    function closeShortcutsModal() {
+      if (shortcutsModal) shortcutsModal.classList.remove('open');
+    }
+
+    if (btnOpenShortcuts) {
+      btnOpenShortcuts.addEventListener('click', openShortcutsModal);
+    }
+    if (shortcutsCloseBtn) {
+      shortcutsCloseBtn.addEventListener('click', closeShortcutsModal);
+    }
+    if (shortcutsModal) {
+      shortcutsModal.addEventListener('click', (e) => {
+        if (e.target === shortcutsModal) closeShortcutsModal();
+      });
+    }
+
+    // Comprehensive Keyboard Navigation & Shortcuts
+    document.addEventListener('keydown', (e) => {
+      const isTyping = ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName);
+
+      // 1. If Shortcuts Modal is open
+      if (shortcutsModal && shortcutsModal.classList.contains('open')) {
+        if (e.key === 'Escape' || e.key === '?') {
+          closeShortcutsModal();
+          e.preventDefault();
+        }
+        return;
+      }
+
+      // 2. Global Hotkey: Toggle Shortcuts Guide with '?' (Shift + /)
+      if (e.key === '?' && !isTyping) {
+        openShortcutsModal();
+        e.preventDefault();
+        return;
+      }
+
+      // 3. Global Hotkey: Focus search input with '/' or Ctrl+K / Cmd+K
+      if (((e.key === '/' && !isTyping) || ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')))) {
+        const searchInp = document.getElementById('searchInput');
+        if (searchInp) {
+          searchInp.focus();
+          searchInp.select();
+          e.preventDefault();
+          return;
+        }
+      }
+
+      // 4. Global Hotkey: Export to Excel with Ctrl+E / Cmd+E
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'e' || e.key === 'E')) {
+        const exportBtn = document.getElementById('exportBtn');
+        if (exportBtn && allDiscrepancies.length > 0) {
+          exportBtn.click();
+          e.preventDefault();
+          return;
+        }
+      }
+
+      // 5. If Drilldown Inspection Modal is open
+      if (drilldownModal && drilldownModal.classList.contains('open')) {
+        if (e.key === 'Escape') {
+          drilldownModal.classList.remove('open');
+          currentModalItem = null;
+          e.preventDefault();
+        } else if (e.key === 'ArrowLeft' || e.key === 'k' || e.key === 'K') {
+          navigateModal(-1);
+          e.preventDefault();
+        } else if (e.key === 'ArrowRight' || e.key === 'j' || e.key === 'J') {
+          navigateModal(1);
+          e.preventDefault();
+        } else if (e.key === 'm' || e.key === 'M') {
+          toggleCurrentModalReviewed();
+          e.preventDefault();
+        } else if (e.key === 'c' || e.key === 'C') {
+          if (currentModalItem) {
+            copyToClipboard(currentModalItem.ref, `Copied Reference: ${currentModalItem.ref}`);
+            e.preventDefault();
+          }
+        }
+        return;
+      }
+
+      // 6. Global Mode Switching with numbers 1, 2, 3 (when not typing in an input)
+      if (!isTyping) {
+        if (e.key === '1') {
+          switchMode('single');
+        } else if (e.key === '2') {
+          switchMode('dual');
+        } else if (e.key === '3') {
+          switchMode('supplier');
+        }
+      }
+    });
+
+    function navigateModal(direction) {
+      if (!currentModalItem) return;
+      const items = getFilteredAndSortedDiscrepancies();
+      const currIdx = items.findIndex(d => d.ref === currentModalItem.ref);
+      if (currIdx === -1) return;
+
+      const nextIdx = currIdx + direction;
+      if (nextIdx >= 0 && nextIdx < items.length) {
+        openDrilldownModal(items[nextIdx]);
+      }
+    }
+
+    window.openDrilldownModalByRef = function (ref) {
       const item = allDiscrepancies.find(d => d.ref === ref);
       if (item) openDrilldownModal(item);
     };
 
     function openDrilldownModal(item) {
-      document.getElementById('modalRefTitle').innerText = `Reference: ${item.ref}`;
+      currentModalItem = item;
+      const items = getFilteredAndSortedDiscrepancies();
+      const currIdx = items.findIndex(d => d.ref === item.ref);
+
+      document.getElementById('modalRefTitle').innerText = `Ref: ${item.ref}`;
       document.getElementById('modalStatusSubtitle').innerText = `Status: ${item.statusLabel}`;
+
+      const counterEl = document.getElementById('modalCounterText');
+      if (counterEl) {
+        counterEl.innerText = currIdx !== -1 ? `${currIdx + 1} of ${items.length}` : '1 of 1';
+      }
+      if (btnModalPrev) btnModalPrev.disabled = currIdx <= 0;
+      if (btnModalNext) btnModalNext.disabled = currIdx === -1 || currIdx >= items.length - 1;
+
+      // Update Modal Audit Toggle state
+      updateModalAuditUI(reviewedRefs.has(item.ref));
 
       document.getElementById('modalQBSum').innerText = formatMoney(item.qbSum);
       document.getElementById('modalWIPSum').innerText = formatMoney(item.wipSum);
@@ -1837,18 +3369,28 @@
       // 2. Set Up Alert Banner & Explanatory Text
       const alertBanner = document.getElementById('modalAlertBanner');
       const alertText = document.getElementById('modalAlertText');
+      const isSupplier = currentMode === 'supplier';
 
       if (item.statusType === 'missing_qb') {
         alertBanner.className = 'drilldown-alert-banner banner-missing-qb';
-        alertText.innerHTML = `<strong>Missing in QuickBooks:</strong> This transaction exists in WIP Ledger across ${item.wipLines} line(s) totaling <strong>${formatMoney(item.wipSum)}</strong>, but has no corresponding record in QuickBooks.`;
+        if (isSupplier) {
+          alertText.innerHTML = `<strong>Unbooked Voucher in QuickBooks:</strong> Voucher <code>${escapeHtml(item.ref)}</code> was issued on the vendor's PDF statement across ${item.wipLines} line(s) totaling <strong>${formatMoney(item.wipSum)}</strong>, but has NOT been booked in QuickBooks yet. This accounts for <strong>${formatMoney(Math.abs(item.variance))}</strong> of the deficit.`;
+        } else {
+          alertText.innerHTML = `<strong>Missing in QuickBooks:</strong> This transaction exists in WIP Ledger across ${item.wipLines} line(s) totaling <strong>${formatMoney(item.wipSum)}</strong>, but has no corresponding record in QuickBooks.`;
+        }
       } else if (item.statusType === 'missing_wip') {
         alertBanner.className = 'drilldown-alert-banner banner-missing-wip';
-        alertText.innerHTML = `<strong>Missing in WIP Ledger:</strong> This transaction exists in QuickBooks across ${item.qbLines} line(s) totaling <strong>${formatMoney(item.qbSum)}</strong>, but has no corresponding record in WIP Ledger.`;
+        if (isSupplier) {
+          alertText.innerHTML = `<strong>Recorded in QuickBooks Only:</strong> Voucher <code>${escapeHtml(item.ref)}</code> is booked in QuickBooks across ${item.qbLines} line(s) totaling <strong>${formatMoney(item.qbSum)}</strong>, but is not found on the supplier's PDF statement.`;
+        } else {
+          alertText.innerHTML = `<strong>Missing in WIP Ledger:</strong> This transaction exists in QuickBooks across ${item.qbLines} line(s) totaling <strong>${formatMoney(item.qbSum)}</strong>, but has no corresponding record in WIP Ledger.`;
+        }
       } else if (item.statusType === 'line_diff') {
         alertBanner.className = 'drilldown-alert-banner banner-line-diff';
-        alertText.innerHTML = `<strong>Line Split / Count Difference:</strong> The total amounts are completely balanced (<strong>${formatMoney(item.qbSum)}</strong>), but QuickBooks records it across ${item.qbLines} line(s) while WIP Ledger records it across ${item.wipLines} line(s).`;
+        const otherSideName = isSupplier ? 'the supplier statement' : 'WIP Ledger';
+        alertText.innerHTML = `<strong>Line Split / Count Difference:</strong> The total amounts are completely balanced (<strong>${formatMoney(item.qbSum)}</strong>), but QuickBooks records it across ${item.qbLines} line(s) while ${otherSideName} records it across ${item.wipLines} line(s).`;
       } else {
-        const higherSide = item.qbSum > item.wipSum ? 'QuickBooks is higher' : 'WIP Ledger is higher';
+        const higherSide = item.qbSum > item.wipSum ? 'QuickBooks is higher' : (isSupplier ? 'Supplier Statement is higher' : 'WIP Ledger is higher');
         alertBanner.className = 'drilldown-alert-banner banner-mismatch';
         alertText.innerHTML = `<strong>Amount Variance Detected:</strong> There is a difference of <strong>${formatMoney(Math.abs(item.variance))}</strong> (${higherSide}). The specific discrepant line(s) causing the variance are highlighted below in rose.`;
       }
@@ -1869,13 +3411,13 @@
         qbContentArea.innerHTML = `
           <div class="empty-ledger-card">
             <div class="empty-ledger-title">No Record in QuickBooks</div>
-            <p class="empty-ledger-desc">This transaction reference is completely missing from your QuickBooks report.</p>
+            <p class="empty-ledger-desc">${isSupplier ? 'This voucher was billed on the supplier statement but has not been entered into QuickBooks.' : 'This transaction reference is completely missing from your QuickBooks report.'}</p>
           </div>
         `;
       } else {
         const qbHasDiscrepant = qbAnnotated.some(r => r.status === 'unmatched');
         qbPanel.className = `drilldown-panel ${qbHasDiscrepant ? 'panel-has-discrepancy' : ''}`;
-        
+
         if (!qbHasDiscrepant) {
           qbBadge.className = 'panel-badge badge-ok';
           qbBadge.innerText = isNetSumBalanced ? 'Net Balanced' : 'All Lines Matched';
@@ -1901,7 +3443,7 @@
         qbAnnotated.forEach(r => {
           const tr = document.createElement('tr');
           let pillHtml = '';
-          
+
           if (r.status === 'matched') {
             tr.className = 'row-matched';
             pillHtml = `<span class="row-status-pill pill-matched">✓ Matched</span>`;
@@ -1910,7 +3452,7 @@
             pillHtml = `<span class="row-status-pill pill-split-match">Split Matched</span>`;
           } else if (r.status === 'missing_peer') {
             tr.className = 'row-missing-peer';
-            pillHtml = `<span class="row-status-pill pill-missing-peer">✕ Missing in WIP</span>`;
+            pillHtml = `<span class="row-status-pill pill-missing-peer">✕ Missing in ${isSupplier ? 'Supplier' : 'WIP'}</span>`;
           } else {
             tr.className = 'row-discrepant';
             pillHtml = `<span class="row-status-pill pill-discrepant">⚠ Discrepant</span>`;
@@ -1928,15 +3470,15 @@
         });
       }
 
-      // WIP Ledger Panel
+      // WIP / Supplier Statement Panel
       if (item.wipLines === 0) {
         wipPanel.className = 'drilldown-panel panel-is-missing';
         wipBadge.className = 'panel-badge badge-missing';
-        wipBadge.innerText = 'Missing in WIP';
+        wipBadge.innerText = isSupplier ? 'Missing in Supplier PDF' : 'Missing in WIP';
         wipContentArea.innerHTML = `
           <div class="empty-ledger-card">
-            <div class="empty-ledger-title">No Record in WIP Ledger</div>
-            <p class="empty-ledger-desc">This transaction reference is completely missing from your WIP Ledger report.</p>
+            <div class="empty-ledger-title">${isSupplier ? 'No Record in Supplier Statement' : 'No Record in WIP Ledger'}</div>
+            <p class="empty-ledger-desc">${isSupplier ? 'This transaction is booked in QuickBooks but completely absent from the vendor statement PDF.' : 'This transaction reference is completely missing from your WIP Ledger report.'}</p>
           </div>
         `;
       } else {
@@ -1998,25 +3540,52 @@
       drilldownModal.classList.add('open');
     }
 
-    // Export Excel
+    // Export Excel (Exports filtered discrepancies with audit status)
     document.getElementById('exportBtn').addEventListener('click', () => {
-      if (!allDiscrepancies.length) return;
+      const dataItems = getFilteredAndSortedDiscrepancies();
+      if (!dataItems.length) return;
 
-      const exportData = allDiscrepancies.map(item => ({
-        "Reference No.": item.ref,
-        "Status": item.statusLabel,
-        "QuickBooks Total": item.qbSum,
-        "QB Lines": item.qbLines,
-        "WIP Ledger Total": item.wipSum,
-        "WIP Lines": item.wipLines,
-        "Variance (QB - WIP)": item.variance
-      }));
+      const isSupplier = currentMode === 'supplier';
+      const exportData = dataItems.map(item => {
+        const isReviewed = reviewedRefs.has(item.ref);
+        if (isSupplier) {
+          return {
+            "Audit Status": isReviewed ? "Reviewed" : "Pending Action",
+            "Voucher / Ref No.": item.ref,
+            "Discrepancy Category": item.statusLabel,
+            "QuickBooks Total": item.qbSum,
+            "QB Lines": item.qbLines,
+            "Supplier Statement Total": item.wipSum,
+            "Supplier Statement Lines": item.wipLines,
+            "Variance (QB - Supplier)": item.variance
+          };
+        }
+        return {
+          "Audit Status": isReviewed ? "Reviewed" : "Pending Action",
+          "Reference No.": item.ref,
+          "Discrepancy Category": item.statusLabel,
+          "QuickBooks Total": item.qbSum,
+          "QB Lines": item.qbLines,
+          "WIP Ledger Total": item.wipSum,
+          "WIP Lines": item.wipLines,
+          "Variance (QB - WIP)": item.variance
+        };
+      });
 
       const ws = XLSX.utils.json_to_sheet(exportData);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Discrepancies");
-      XLSX.writeFile(wb, `Andrula_Reconciliation_${new Date().toISOString().slice(0,10)}.xlsx`);
+      const filterSuffix = currentFilter !== 'all' ? `_${currentFilter}` : '';
+      const filename = `Andrula_${isSupplier ? 'Supplier' : 'WIP'}_Reconciliation${filterSuffix}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      XLSX.writeFile(wb, filename);
     });
   </script>
+
+  <!-- Toast Notification element -->
+  <div id="toastNotification" class="toast-pill">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+    <span id="toastMessage">Copied reference!</span>
+  </div>
 </body>
+
 </html>
