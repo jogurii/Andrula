@@ -1,0 +1,2022 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Andrula — QuickBooks & WIP Ledger Reconciler</title>
+  
+  <!-- Typography: Outfit (Warm editorial headlines) + Plus Jakarta Sans (Crisp financial clarity) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- SheetJS CDN -->
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+
+  <style>
+    :root {
+      /* Curated Soft Modern Palette */
+      --blossom-50: #fff5f7;
+      --blossom-100: #fde8ed;
+      --blossom-200: #f9d1db;
+      --blossom-300: #f2aab9;
+      --blossom-400: #e47590;
+      --blossom-500: #d65876;
+      --blossom-600: #ba3c5c;
+      --blossom-700: #992946;
+      
+      --sage-50: #f2f8f4;
+      --sage-100: #e0efe5;
+      --sage-200: #c2ded0;
+      --sage-500: #4a8261;
+      --sage-600: #36664a;
+      
+      --amber-50: #fffbeb;
+      --amber-100: #fef3c7;
+      --amber-200: #fde68a;
+      --amber-600: #d97706;
+      --amber-700: #b45309;
+
+      --cream-bg: #faf7f5;
+      --surface-white: #ffffff;
+      --card-border: #f4e6e9;
+      --slate-title: #2b232c;
+      --slate-body: #534855;
+      --slate-muted: #88788a;
+      
+      --shadow-soft: 0 12px 36px -8px rgba(186, 60, 92, 0.08), 0 4px 16px -2px rgba(43, 35, 44, 0.03);
+      --shadow-hover: 0 18px 40px -8px rgba(186, 60, 92, 0.15), 0 6px 20px -2px rgba(43, 35, 44, 0.04);
+      --radius-card: 22px;
+      --radius-pill: 9999px;
+      --radius-sm: 10px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--cream-bg);
+      background-image: 
+        radial-gradient(circle at 8% 12%, rgba(249, 209, 219, 0.45) 0%, transparent 42%),
+        radial-gradient(circle at 92% 88%, rgba(194, 222, 208, 0.4) 0%, transparent 48%),
+        radial-gradient(circle at 50% 50%, rgba(255, 245, 247, 0.6) 0%, transparent 100%);
+      color: var(--slate-body);
+      min-height: 100vh;
+      padding: 2.5rem 1.25rem 4.5rem;
+    }
+
+    .container {
+      max-width: 1080px;
+      margin: 0 auto;
+    }
+
+    /* Header & Branding */
+    .brand-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+      gap: 1.25rem;
+    }
+
+    .brand-title-group {
+      display: flex;
+      align-items: center;
+      gap: 0.9rem;
+    }
+
+    .logo-bloom {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, var(--blossom-100), var(--blossom-200));
+      border: 1.5px solid var(--blossom-300);
+      border-radius: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--blossom-600);
+      box-shadow: 0 4px 14px rgba(214, 88, 118, 0.16);
+    }
+
+    .brand-name {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.85rem;
+      font-weight: 700;
+      color: var(--slate-title);
+      letter-spacing: -0.025em;
+    }
+
+    .brand-subtitle {
+      font-size: 0.875rem;
+      color: var(--slate-muted);
+      margin-top: 0.15rem;
+      font-weight: 500;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .currency-select-wrapper {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      background: var(--surface-white);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-pill);
+      padding: 0.4rem 0.85rem;
+      font-size: 0.8rem;
+      color: var(--slate-body);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+    }
+
+    .currency-select-wrapper select {
+      border: none;
+      background: transparent;
+      font-family: inherit;
+      font-weight: 600;
+      color: var(--blossom-700);
+      outline: none;
+      cursor: pointer;
+    }
+
+    .privacy-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      background-color: var(--sage-50);
+      color: var(--sage-600);
+      border: 1px solid var(--sage-200);
+      padding: 0.45rem 0.95rem;
+      border-radius: var(--radius-pill);
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+
+    /* Cards */
+    .card {
+      background: var(--surface-white);
+      border-radius: var(--radius-card);
+      border: 1px solid var(--card-border);
+      padding: 2.25rem 2rem;
+      box-shadow: var(--shadow-soft);
+      margin-bottom: 2rem;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    /* Mode Tabs */
+    .tabs-nav {
+      display: flex;
+      background: var(--blossom-50);
+      border: 1px solid var(--blossom-100);
+      padding: 0.35rem;
+      border-radius: var(--radius-pill);
+      margin-bottom: 1.5rem;
+      width: fit-content;
+      max-width: 100%;
+      gap: 0.25rem;
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: none;
+      padding: 0.55rem 1.25rem;
+      border-radius: var(--radius-pill);
+      font-family: inherit;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--slate-muted);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.25s ease;
+    }
+
+    .tab-btn.active {
+      background: var(--surface-white);
+      color: var(--blossom-600);
+      box-shadow: 0 4px 12px rgba(214, 88, 118, 0.12);
+    }
+
+    /* Dropzone */
+    .dropzone-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.25rem;
+    }
+
+    .dropzone-grid.dual {
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    }
+
+    .dropzone {
+      border: 2px dashed var(--blossom-200);
+      background-color: var(--blossom-50);
+      border-radius: 18px;
+      padding: 2.25rem 1.5rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      position: relative;
+    }
+
+    .dropzone:hover, .dropzone.drag-over {
+      border-color: var(--blossom-400);
+      background-color: #fff0f3;
+      transform: translateY(-2px);
+    }
+
+    .dropzone.loaded {
+      border-style: solid;
+      border-color: var(--sage-200);
+      background-color: var(--sage-50);
+    }
+
+    .dropzone-icon {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      background: var(--surface-white);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--blossom-500);
+      box-shadow: 0 4px 12px rgba(214, 88, 118, 0.1);
+      margin-bottom: 0.85rem;
+      transition: transform 0.2s;
+    }
+
+    .dropzone:hover .dropzone-icon {
+      transform: scale(1.08);
+    }
+
+    .dropzone.loaded .dropzone-icon {
+      color: var(--sage-500);
+      box-shadow: 0 4px 10px rgba(74, 130, 97, 0.12);
+    }
+
+    .dropzone-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--slate-title);
+      margin-bottom: 0.35rem;
+    }
+
+    .dropzone-desc {
+      font-size: 0.82rem;
+      color: var(--slate-muted);
+    }
+
+    .dropzone-file-name {
+      display: none;
+      margin-top: 0.65rem;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--sage-600);
+      background: var(--surface-white);
+      padding: 0.35rem 0.9rem;
+      border-radius: var(--radius-pill);
+      border: 1px solid var(--sage-200);
+    }
+
+    /* Configuration Panel (Collapsible) */
+    .config-toggle {
+      background: transparent;
+      border: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-family: inherit;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--blossom-600);
+      cursor: pointer;
+      margin-top: 1.35rem;
+      padding: 0.4rem 0.65rem;
+      border-radius: var(--radius-sm);
+      transition: background 0.2s;
+    }
+
+    .config-toggle:hover {
+      background: var(--blossom-100);
+    }
+
+    .config-panel {
+      display: none;
+      background: var(--blossom-50);
+      border: 1px solid var(--blossom-100);
+      border-radius: 14px;
+      padding: 1.25rem;
+      margin-top: 1rem;
+      font-size: 0.85rem;
+      animation: fadeIn 0.25s ease;
+    }
+
+    .config-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+    }
+
+    .config-item label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--slate-muted);
+      margin-bottom: 0.35rem;
+    }
+
+    .config-item select {
+      width: 100%;
+      padding: 0.5rem 0.75rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--blossom-200);
+      background: var(--surface-white);
+      color: var(--slate-title);
+      font-family: inherit;
+      font-size: 0.85rem;
+      outline: none;
+    }
+
+    /* Metrics Section */
+    .metrics-section {
+      display: none;
+      margin-top: 2rem;
+      animation: fadeIn 0.4s ease-out;
+    }
+
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.25rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .metric-card {
+      background: var(--blossom-50);
+      border: 1px solid var(--blossom-100);
+      border-radius: 16px;
+      padding: 1.35rem 1.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .metric-card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: var(--blossom-300);
+    }
+
+    .metric-card.sage::before {
+      background: var(--sage-500);
+    }
+
+    .metric-card.rose::before {
+      background: var(--blossom-500);
+    }
+
+    .metric-tag {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--slate-muted);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      margin-bottom: 0.4rem;
+    }
+
+    .metric-amount {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.45rem;
+      font-weight: 700;
+      color: var(--slate-title);
+      letter-spacing: -0.01em;
+    }
+
+    .metric-count {
+      font-size: 0.75rem;
+      color: var(--slate-muted);
+      margin-top: 0.25rem;
+    }
+
+    .badge-variance-balanced {
+      color: var(--sage-600);
+    }
+
+    .badge-variance-alert {
+      color: var(--blossom-600);
+    }
+
+    /* Table Toolbar & Search */
+    .table-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .filter-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+
+    .chip-btn {
+      background: var(--blossom-50);
+      border: 1px solid var(--blossom-100);
+      border-radius: var(--radius-pill);
+      padding: 0.35rem 0.85rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--slate-body);
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.2s ease;
+    }
+
+    .chip-btn:hover {
+      background: var(--blossom-100);
+      color: var(--blossom-600);
+    }
+
+    .chip-btn.active {
+      background: var(--blossom-500);
+      border-color: var(--blossom-500);
+      color: var(--surface-white);
+      box-shadow: 0 4px 10px rgba(214, 88, 118, 0.22);
+    }
+
+    .search-box {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      width: 250px;
+    }
+
+    .search-box input {
+      width: 100%;
+      padding: 0.5rem 1rem 0.5rem 2.25rem;
+      border-radius: var(--radius-pill);
+      border: 1px solid var(--blossom-200);
+      font-family: inherit;
+      font-size: 0.82rem;
+      outline: none;
+      background: var(--surface-white);
+      color: var(--slate-title);
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .search-box input:focus {
+      border-color: var(--blossom-400);
+      box-shadow: 0 0 0 3px rgba(214, 88, 118, 0.12);
+    }
+
+    .search-box svg {
+      position: absolute;
+      left: 0.75rem;
+      color: var(--slate-muted);
+      pointer-events: none;
+    }
+
+    /* Buttons */
+    .btn-primary {
+      background: linear-gradient(135deg, var(--blossom-400), var(--blossom-500));
+      color: var(--surface-white);
+      border: none;
+      padding: 0.6rem 1.25rem;
+      border-radius: var(--radius-pill);
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.85rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      box-shadow: 0 4px 14px rgba(214, 88, 118, 0.25);
+      transition: all 0.2s ease;
+    }
+
+    .btn-primary:hover {
+      background: linear-gradient(135deg, var(--blossom-500), var(--blossom-600));
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(214, 88, 118, 0.3);
+    }
+
+    /* Table */
+    .table-container {
+      overflow-x: auto;
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      text-align: left;
+    }
+
+    th {
+      background-color: var(--blossom-50);
+      color: var(--slate-muted);
+      font-weight: 700;
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 0.85rem 1rem;
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    td {
+      padding: 0.9rem 1rem;
+      border-bottom: 1px solid var(--blossom-100);
+      color: var(--slate-body);
+      vertical-align: middle;
+    }
+
+    tbody tr {
+      transition: background-color 0.15s ease;
+      cursor: pointer;
+    }
+
+    tbody tr:hover {
+      background-color: #fff9fa;
+    }
+
+    tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .ref-code {
+      font-weight: 700;
+      color: var(--slate-title);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.25rem 0.65rem;
+      border-radius: var(--radius-pill);
+      font-size: 0.74rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .status-mismatch {
+      background: #fdf0f2;
+      color: var(--blossom-600);
+      border: 1px solid var(--blossom-200);
+    }
+
+    .status-missing-qb {
+      background: #fef7ec;
+      color: #b46a28;
+      border: 1px solid #f5d7b5;
+    }
+
+    .status-missing-wip {
+      background: #f4f0f9;
+      color: #6e469c;
+      border: 1px solid #d9cde8;
+    }
+
+    .status-line-diff {
+      background: #eef6f8;
+      color: #2b7083;
+      border: 1px solid #bce1e8;
+    }
+
+    .action-inspect-btn {
+      background: transparent;
+      border: 1px solid var(--blossom-200);
+      color: var(--blossom-600);
+      border-radius: var(--radius-pill);
+      padding: 0.3rem 0.65rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      transition: all 0.2s;
+    }
+
+    .action-inspect-btn:hover {
+      background: var(--blossom-500);
+      color: var(--surface-white);
+      border-color: var(--blossom-500);
+    }
+
+    /* Modal / Drawer for Drill-Down */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(43, 35, 44, 0.45);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      animation: fadeIn 0.2s ease-out;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal-dialog {
+      background: var(--surface-white);
+      border-radius: 20px;
+      width: 100%;
+      max-width: 900px;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 24px 48px -12px rgba(43, 35, 44, 0.25);
+      border: 1px solid var(--card-border);
+      overflow: hidden;
+      animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .modal-header {
+      padding: 1.25rem 1.75rem;
+      border-bottom: 1px solid var(--card-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--blossom-50);
+    }
+
+    .modal-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .modal-close-btn {
+      background: transparent;
+      border: none;
+      color: var(--slate-muted);
+      cursor: pointer;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .modal-close-btn:hover {
+      background: var(--blossom-200);
+      color: var(--slate-title);
+    }
+
+    .modal-body {
+      padding: 1.5rem 1.75rem;
+      overflow-y: auto;
+    }
+
+    /* Modal Summary & Highlight Banner */
+    .drilldown-summary {
+      background: var(--cream-bg);
+      border: 1px solid var(--blossom-100);
+      border-radius: 14px;
+      padding: 1rem 1.25rem;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .summary-box {
+      font-size: 0.8rem;
+    }
+    .summary-box-label {
+      color: var(--slate-muted);
+      margin-bottom: 0.2rem;
+    }
+    .summary-box-val {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--slate-title);
+    }
+
+    /* Prominent Callout Banner in Modal */
+    .drilldown-alert-banner {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      padding: 0.85rem 1.15rem;
+      border-radius: 12px;
+      margin-bottom: 1.35rem;
+      font-size: 0.83rem;
+      line-height: 1.45;
+    }
+
+    .banner-mismatch {
+      background-color: #fff1f3;
+      border: 1px solid #fecdd3;
+      color: #9f1239;
+    }
+
+    .banner-missing-qb {
+      background-color: #fffbeb;
+      border: 1px solid #fde68a;
+      color: #92400e;
+    }
+
+    .banner-missing-wip {
+      background-color: #fdf4ff;
+      border: 1px solid #f5d0fe;
+      color: #86198f;
+    }
+
+    .banner-line-diff {
+      background-color: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      color: #166534;
+    }
+
+    /* Side-by-Side Panels */
+    .drilldown-columns {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+    }
+
+    @media (max-width: 760px) {
+      .drilldown-columns {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .drilldown-panel {
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      overflow: hidden;
+      background: var(--surface-white);
+    }
+
+    .drilldown-panel.panel-has-discrepancy {
+      border-color: #f9d1db;
+    }
+
+    .drilldown-panel.panel-is-missing {
+      border: 1.5px dashed #fca5a5;
+      background: #fff8f8;
+    }
+
+    .drilldown-panel-title {
+      background: var(--blossom-50);
+      padding: 0.75rem 1rem;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--slate-title);
+      border-bottom: 1px solid var(--card-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .panel-badge {
+      font-size: 0.72rem;
+      padding: 0.2rem 0.65rem;
+      border-radius: var(--radius-pill);
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .panel-badge.badge-missing {
+      background: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #fca5a5;
+    }
+
+    .panel-badge.badge-alert {
+      background: #fff1f2;
+      color: #be123c;
+      border: 1px solid #fecdd3;
+    }
+
+    .panel-badge.badge-ok {
+      background: #ecfdf5;
+      color: #065f46;
+      border: 1px solid #a7f3d0;
+    }
+
+    /* Row-Level Status Marking */
+    .drilldown-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.8rem;
+    }
+
+    .drilldown-table th {
+      background: #fdf9fa;
+      padding: 0.65rem 0.85rem;
+      font-size: 0.72rem;
+    }
+
+    .drilldown-table td {
+      padding: 0.75rem 0.85rem;
+      border-bottom: 1px solid #f8eaee;
+    }
+
+    /* Specific Row Highlights */
+    tr.row-discrepant {
+      background-color: #fff2f5 !important;
+    }
+
+    tr.row-discrepant td:first-child {
+      border-left: 3.5px solid var(--blossom-500);
+    }
+
+    tr.row-missing-peer {
+      background-color: #fffcf2 !important;
+    }
+
+    tr.row-missing-peer td:first-child {
+      border-left: 3.5px solid var(--amber-600);
+    }
+
+    tr.row-matched {
+      background-color: transparent;
+    }
+
+    .row-status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-size: 0.69rem;
+      padding: 0.15rem 0.5rem;
+      border-radius: var(--radius-pill);
+      font-weight: 600;
+      margin-left: 0.4rem;
+      white-space: nowrap;
+    }
+
+    .row-status-pill.pill-matched {
+      background: #ecfdf5;
+      color: #065f46;
+      border: 1px solid #a7f3d0;
+    }
+
+    .row-status-pill.pill-discrepant {
+      background: #fff1f2;
+      color: #be123c;
+      border: 1px solid #fecdd3;
+    }
+
+    .row-status-pill.pill-missing-peer {
+      background: #fffbeb;
+      color: #b45309;
+      border: 1px solid #fde68a;
+    }
+
+    .row-status-pill.pill-split-match {
+      background: #eff6ff;
+      color: #1d4ed8;
+      border: 1px solid #bfdbfe;
+    }
+
+    /* Empty Ledger Notice inside Panel */
+    .empty-ledger-card {
+      padding: 2.25rem 1.25rem;
+      text-align: center;
+      background: #fff7f8;
+      border-radius: 10px;
+      margin: 1rem;
+      border: 1.5px dashed #f8b4c2;
+    }
+
+    .empty-ledger-title {
+      font-weight: 700;
+      font-size: 0.88rem;
+      color: #ba3c5c;
+      margin-bottom: 0.35rem;
+    }
+
+    .empty-ledger-desc {
+      font-size: 0.78rem;
+      color: var(--slate-muted);
+      line-height: 1.45;
+      max-width: 280px;
+      margin: 0 auto;
+    }
+
+    .empty-state-perfect {
+      text-align: center;
+      padding: 3.5rem 1.5rem;
+    }
+
+    .empty-state-icon {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 1rem;
+      background: var(--sage-100);
+      color: var(--sage-600);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Animations */
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(12px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    .petal-accent {
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50% 0;
+      background: var(--blossom-400);
+      margin-right: 0.35rem;
+      transform: rotate(45deg);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+
+    <!-- Header & Brand -->
+    <header class="brand-header">
+      <div class="brand-title-group">
+        <div class="logo-bloom">
+          <!-- Bloom Logo SVG -->
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 4c1.5-2 4-2 5.5-.5s1.5 4-.5 5.5c2 1.5 2 4 .5 5.5s-4 1.5-5.5-.5c-1.5 2-4 2-5.5.5s-1.5-4 .5-5.5c-2-1.5-2-4-.5-5.5S10.5 2 12 4z"/>
+            <circle cx="12" cy="12" r="2.5" fill="currentColor"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="brand-name">Andrula</h1>
+          <p class="brand-subtitle">QuickBooks & WIP Ledger Reconciler</p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <!-- Currency Selector (Default AED for UAE) -->
+        <div class="currency-select-wrapper">
+          <span style="font-size: 0.75rem; color: var(--slate-muted);">Currency:</span>
+          <select id="currencySelector">
+            <option value="AED" selected>AED (د.إ)</option>
+            <option value="USD">USD ($)</option>
+            <option value="EUR">EUR (€)</option>
+            <option value="GBP">GBP (£)</option>
+            <option value="IDR">IDR (Rp)</option>
+            <option value="SGD">SGD (S$)</option>
+            <option value="AUD">AUD (A$)</option>
+          </select>
+        </div>
+
+        <!-- Privacy Badge -->
+        <div class="privacy-badge">
+          <!-- Clean Shield/Lock SVG -->
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+          <span>100% Client-Side Privacy</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Upload Card -->
+    <div class="card">
+      <!-- Mode Selection Tabs -->
+      <div class="tabs-nav">
+        <button class="tab-btn active" id="tabSingleMode">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Single Workbook (2 Sheets)
+        </button>
+        <button class="tab-btn" id="tabDualMode">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v1"/><path d="M18 8h4a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-4"/></svg>
+          Two Separate Files (QB & WIP)
+        </button>
+      </div>
+
+      <!-- Single File Upload Zone -->
+      <div id="singleDropzoneWrapper">
+        <div class="dropzone" id="dropzoneSingle">
+          <div class="dropzone-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+          </div>
+          <p class="dropzone-title">Click to choose file or drag & drop here</p>
+          <p class="dropzone-desc">Select an Excel file (<code>.xlsx</code> or <code>.xls</code>) with QuickBooks and WIP Ledger sheets</p>
+          <div class="dropzone-file-name" id="singleFileName"></div>
+          <input type="file" id="fileInputSingle" accept=".xlsx, .xls" style="display: none;">
+        </div>
+      </div>
+
+      <!-- Dual File Upload Zone -->
+      <div id="dualDropzoneWrapper" style="display: none;">
+        <div class="dropzone-grid dual">
+          <!-- QuickBooks Dropzone -->
+          <div class="dropzone" id="dropzoneQB">
+            <div class="dropzone-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            </div>
+            <p class="dropzone-title">1. QuickBooks Report</p>
+            <p class="dropzone-desc">Click or drop your QuickBooks export file (<code>.xlsx</code>)</p>
+            <div class="dropzone-file-name" id="qbFileName"></div>
+            <input type="file" id="fileInputQB" accept=".xlsx, .xls" style="display: none;">
+          </div>
+
+          <!-- WIP Ledger Dropzone -->
+          <div class="dropzone" id="dropzoneWIP">
+            <div class="dropzone-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            </div>
+            <p class="dropzone-title">2. WIP Ledger Report</p>
+            <p class="dropzone-desc">Click or drop your WIP Ledger file (<code>.xlsx</code>)</p>
+            <div class="dropzone-file-name" id="wipFileName"></div>
+            <input type="file" id="fileInputWIP" accept=".xlsx, .xls" style="display: none;">
+          </div>
+        </div>
+      </div>
+
+      <!-- Optional Sheet & Column Config -->
+      <button class="config-toggle" id="toggleConfigBtn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        Sheet & Column Settings (Optional)
+      </button>
+
+      <div class="config-panel" id="configPanel">
+        <div class="config-grid">
+          <div class="config-item">
+            <label>QuickBooks Sheet</label>
+            <select id="selectQBSheet">
+              <option value="">Auto-Detect</option>
+            </select>
+          </div>
+          <div class="config-item">
+            <label>WIP Ledger Sheet</label>
+            <select id="selectWIPSheet">
+              <option value="">Auto-Detect</option>
+            </select>
+          </div>
+          <div class="config-item">
+            <label>Amount Variance Tolerance</label>
+            <select id="selectTolerance">
+              <option value="0.01" selected>Standard (0.01)</option>
+              <option value="0.00">Zero (0.00)</option>
+              <option value="1.00">Tolerance (1.00)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Financial Metrics Section -->
+      <div class="metrics-section" id="metricsSection">
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <div class="metric-tag">
+              <span class="petal-accent"></span>
+              QuickBooks Total
+            </div>
+            <div class="metric-amount" id="metricQBTotal">AED 0.00</div>
+            <div class="metric-count" id="metricQBLines">0 transactions</div>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-tag">
+              <span class="petal-accent"></span>
+              WIP Ledger Total
+            </div>
+            <div class="metric-amount" id="metricWIPTotal">AED 0.00</div>
+            <div class="metric-count" id="metricWIPLines">0 transactions</div>
+          </div>
+
+          <div class="metric-card" id="metricVarianceCard">
+            <div class="metric-tag">
+              <span class="petal-accent"></span>
+              Net Variance (QB - WIP)
+            </div>
+            <div class="metric-amount" id="metricVarianceTotal">AED 0.00</div>
+            <div class="metric-count" id="metricVarianceStatus">Balanced</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Results Section -->
+    <div class="card" id="resultsCard" style="display: none;">
+      <!-- Table Toolbar -->
+      <div class="table-toolbar">
+        <div>
+          <h2 style="font-family: 'Outfit', sans-serif; font-size: 1.25rem; color: var(--slate-title); margin-bottom: 0.25rem;">
+            Discrepancy Breakdown
+          </h2>
+          <p style="font-size: 0.8rem; color: var(--slate-muted);" id="discrepancyCountSubtitle">
+            Showing records that require attention
+          </p>
+        </div>
+
+        <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+          <div class="search-box">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input type="text" id="searchInput" placeholder="Search reference no...">
+          </div>
+
+          <button class="btn-primary" id="exportBtn">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            Export Excel
+          </button>
+        </div>
+      </div>
+
+      <!-- Filter Chips -->
+      <div class="filter-chips" id="filterChips" style="margin-bottom: 1.25rem;">
+        <button class="chip-btn active" data-filter="all">All Discrepancies (<span id="countAll">0</span>)</button>
+        <button class="chip-btn" data-filter="mismatch">Amount Mismatch (<span id="countMismatch">0</span>)</button>
+        <button class="chip-btn" data-filter="missing_qb">Missing in QB (<span id="countMissingQB">0</span>)</button>
+        <button class="chip-btn" data-filter="missing_wip">Missing in WIP (<span id="countMissingWIP">0</span>)</button>
+        <button class="chip-btn" data-filter="line_diff">Line Count Diff (<span id="countLineDiff">0</span>)</button>
+      </div>
+
+      <!-- Table View -->
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Reference (No.)</th>
+              <th>QB Total</th>
+              <th>QB Lines</th>
+              <th>WIP Total</th>
+              <th>WIP Lines</th>
+              <th>Variance (QB - WIP)</th>
+              <th>Status</th>
+              <th style="text-align: right;">Action</th>
+            </tr>
+          </thead>
+          <tbody id="discrepancyTableBody">
+            <!-- Rendered by JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Modal Drill-Down Detail Transaksi with Missing & Discrepancy Markings -->
+  <div class="modal-backdrop" id="drilldownModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <span class="petal-accent"></span>
+          <div>
+            <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.15rem; color: var(--slate-title);" id="modalRefTitle">Ref: #12345</h3>
+            <p style="font-size: 0.78rem; color: var(--slate-muted);" id="modalStatusSubtitle">Audit & Transaction Comparison</p>
+          </div>
+        </div>
+        <button class="modal-close-btn" id="modalCloseBtn" aria-label="Close dialog">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Summary Box in Modal -->
+        <div class="drilldown-summary">
+          <div class="summary-box">
+            <div class="summary-box-label">QuickBooks Total</div>
+            <div class="summary-box-val" id="modalQBSum">AED 0.00</div>
+          </div>
+          <div class="summary-box">
+            <div class="summary-box-label">WIP Ledger Total</div>
+            <div class="summary-box-val" id="modalWIPSum">AED 0.00</div>
+          </div>
+          <div class="summary-box">
+            <div class="summary-box-label">Variance (QB - WIP)</div>
+            <div class="summary-box-val" id="modalVarianceVal">AED 0.00</div>
+          </div>
+        </div>
+
+        <!-- Prominent Visual Alert Banner Explaining the Discrepancy -->
+        <div class="drilldown-alert-banner" id="modalAlertBanner">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0; margin-top: 2px;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+          <div id="modalAlertText">Detailed discrepancy notes.</div>
+        </div>
+
+        <!-- Two Columns of Underlying Rows with Discrepant/Missing Indicators -->
+        <div class="drilldown-columns">
+          <!-- QB Rows Panel -->
+          <div class="drilldown-panel" id="panelQB">
+            <div class="drilldown-panel-title">
+              <span style="display: flex; align-items: center; gap: 0.4rem;">
+                QuickBooks Lines
+                <span style="font-weight: 500; font-size: 0.75rem; color: var(--slate-muted);" id="modalQBLinesCount">(0 lines)</span>
+              </span>
+              <span id="modalQBPanelBadge" class="panel-badge">Status</span>
+            </div>
+            
+            <div id="modalQBContentArea">
+              <table class="drilldown-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Description / Memo</th>
+                    <th style="text-align: right;">Amount & Status</th>
+                  </tr>
+                </thead>
+                <tbody id="modalQBRowsBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- WIP Rows Panel -->
+          <div class="drilldown-panel" id="panelWIP">
+            <div class="drilldown-panel-title">
+              <span style="display: flex; align-items: center; gap: 0.4rem;">
+                WIP Ledger Lines
+                <span style="font-weight: 500; font-size: 0.75rem; color: var(--slate-muted);" id="modalWIPLinesCount">(0 lines)</span>
+              </span>
+              <span id="modalWIPPanelBadge" class="panel-badge">Status</span>
+            </div>
+
+            <div id="modalWIPContentArea">
+              <table class="drilldown-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Description / Memo</th>
+                    <th style="text-align: right;">Amount & Status</th>
+                  </tr>
+                </thead>
+                <tbody id="modalWIPRowsBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Legend / Guidance Footer -->
+        <div style="margin-top: 1.25rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem; font-size: 0.75rem; color: var(--slate-muted); background: var(--blossom-50); padding: 0.65rem 1rem; border-radius: 10px; border: 1px solid var(--blossom-100);">
+          <span style="font-weight: 600;">Status Marking Guide:</span>
+          <span style="display: inline-flex; align-items: center; gap: 0.35rem;">
+            <span class="row-status-pill pill-matched">✓ Matched</span> Equal counterpart found
+          </span>
+          <span style="display: inline-flex; align-items: center; gap: 0.35rem;">
+            <span class="row-status-pill pill-discrepant">⚠ Discrepant</span> Amount causes variance
+          </span>
+          <span style="display: inline-flex; align-items: center; gap: 0.35rem;">
+            <span class="row-status-pill pill-missing-peer">✕ Missing in Other</span> No counterpart in opposite ledger
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // State
+    let currentMode = 'single'; // 'single' | 'dual'
+    let singleWorkbook = null;
+    let qbWorkbook = null;
+    let wipWorkbook = null;
+    let allDiscrepancies = [];
+    let currentFilter = 'all';
+    let searchQuery = '';
+
+    // Currency Formatter
+    const currencyConfigs = {
+      AED: { code: 'AED', symbol: 'AED ', decimals: 2 },
+      USD: { code: 'USD', symbol: '$', decimals: 2 },
+      EUR: { code: 'EUR', symbol: '€', decimals: 2 },
+      GBP: { code: 'GBP', symbol: '£', decimals: 2 },
+      IDR: { code: 'IDR', symbol: 'Rp ', decimals: 2 },
+      SGD: { code: 'SGD', symbol: 'S$', decimals: 2 },
+      AUD: { code: 'AUD', symbol: 'A$', decimals: 2 }
+    };
+
+    function getSelectedCurrency() {
+      const select = document.getElementById('currencySelector');
+      return select ? select.value : 'AED';
+    }
+
+    function formatMoney(amount) {
+      const currKey = getSelectedCurrency();
+      const cfg = currencyConfigs[currKey] || currencyConfigs.AED;
+      const num = Number(amount) || 0;
+      return cfg.symbol + num.toLocaleString('en-US', {
+        minimumFractionDigits: cfg.decimals,
+        maximumFractionDigits: cfg.decimals
+      });
+    }
+
+    // Tab Switching
+    const tabSingleMode = document.getElementById('tabSingleMode');
+    const tabDualMode = document.getElementById('tabDualMode');
+    const singleDropzoneWrapper = document.getElementById('singleDropzoneWrapper');
+    const dualDropzoneWrapper = document.getElementById('dualDropzoneWrapper');
+
+    tabSingleMode.addEventListener('click', () => {
+      currentMode = 'single';
+      tabSingleMode.classList.add('active');
+      tabDualMode.classList.remove('active');
+      singleDropzoneWrapper.style.display = 'block';
+      dualDropzoneWrapper.style.display = 'none';
+      populateSheetDropdowns();
+      runReconciliationIfReady();
+    });
+
+    tabDualMode.addEventListener('click', () => {
+      currentMode = 'dual';
+      tabDualMode.classList.add('active');
+      tabSingleMode.classList.remove('active');
+      singleDropzoneWrapper.style.display = 'none';
+      dualDropzoneWrapper.style.display = 'block';
+      populateSheetDropdowns();
+      runReconciliationIfReady();
+    });
+
+    // Dropzone setup helper
+    function setupDropzone(dropzoneEl, inputEl, nameEl, onFileLoaded) {
+      dropzoneEl.addEventListener('click', () => inputEl.click());
+      
+      dropzoneEl.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropzoneEl.classList.add('drag-over');
+      });
+
+      dropzoneEl.addEventListener('dragleave', () => {
+        dropzoneEl.classList.remove('drag-over');
+      });
+
+      dropzoneEl.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropzoneEl.classList.remove('drag-over');
+        if (e.dataTransfer.files.length) {
+          processFile(e.dataTransfer.files[0]);
+        }
+      });
+
+      inputEl.addEventListener('change', (e) => {
+        if (e.target.files.length) {
+          processFile(e.target.files[0]);
+        }
+      });
+
+      function processFile(file) {
+        if (nameEl) {
+          nameEl.innerText = file.name;
+          nameEl.style.display = 'inline-block';
+        }
+        dropzoneEl.classList.add('loaded');
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          onFileLoaded(workbook);
+        };
+        reader.readAsArrayBuffer(file);
+      }
+    }
+
+    // Single mode dropzone
+    setupDropzone(
+      document.getElementById('dropzoneSingle'),
+      document.getElementById('fileInputSingle'),
+      document.getElementById('singleFileName'),
+      (wb) => {
+        singleWorkbook = wb;
+        populateSheetDropdowns();
+        runReconciliationIfReady();
+      }
+    );
+
+    // Dual mode dropzones
+    setupDropzone(
+      document.getElementById('dropzoneQB'),
+      document.getElementById('fileInputQB'),
+      document.getElementById('qbFileName'),
+      (wb) => {
+        qbWorkbook = wb;
+        populateSheetDropdowns();
+        runReconciliationIfReady();
+      }
+    );
+
+    setupDropzone(
+      document.getElementById('dropzoneWIP'),
+      document.getElementById('fileInputWIP'),
+      document.getElementById('wipFileName'),
+      (wb) => {
+        wipWorkbook = wb;
+        populateSheetDropdowns();
+        runReconciliationIfReady();
+      }
+    );
+
+    // Config Toggle
+    const toggleConfigBtn = document.getElementById('toggleConfigBtn');
+    const configPanel = document.getElementById('configPanel');
+    toggleConfigBtn.addEventListener('click', () => {
+      const isHidden = configPanel.style.display === 'none' || !configPanel.style.display;
+      configPanel.style.display = isHidden ? 'block' : 'none';
+    });
+
+    document.getElementById('selectQBSheet').addEventListener('change', () => runReconciliationIfReady());
+    document.getElementById('selectWIPSheet').addEventListener('change', () => runReconciliationIfReady());
+    document.getElementById('selectTolerance').addEventListener('change', () => runReconciliationIfReady());
+    document.getElementById('currencySelector').addEventListener('change', () => {
+      updateMetricsDisplay();
+      renderDiscrepanciesTable();
+    });
+
+    function populateSheetDropdowns() {
+      const qbSelect = document.getElementById('selectQBSheet');
+      const wipSelect = document.getElementById('selectWIPSheet');
+
+      qbSelect.innerHTML = '<option value="">Auto-Detect</option>';
+      wipSelect.innerHTML = '<option value="">Auto-Detect</option>';
+
+      if (currentMode === 'single' && singleWorkbook) {
+        singleWorkbook.SheetNames.forEach(name => {
+          qbSelect.innerHTML += `<option value="${name}">${name}</option>`;
+          wipSelect.innerHTML += `<option value="${name}">${name}</option>`;
+        });
+      } else if (currentMode === 'dual') {
+        if (qbWorkbook) {
+          qbWorkbook.SheetNames.forEach(name => {
+            qbSelect.innerHTML += `<option value="${name}">${name}</option>`;
+          });
+        }
+        if (wipWorkbook) {
+          wipWorkbook.SheetNames.forEach(name => {
+            wipSelect.innerHTML += `<option value="${name}">${name}</option>`;
+          });
+        }
+      }
+    }
+
+    function cleanNumber(val) {
+      if (typeof val === 'number') return val;
+      if (!val) return 0;
+      const cleanStr = String(val).replace(/[^0-9.-]+/g, '');
+      return parseFloat(cleanStr) || 0;
+    }
+
+    function parseTransactionsFromSheet(sheet) {
+      if (!sheet) return { map: new Map(), totalAmount: 0, totalLines: 0 };
+      const raw = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+      let headerIdx = -1;
+      let colNo = -1, colAmt = -1, colDate = -1, colDesc = -1;
+
+      // Scan first 20 rows for headers
+      for (let i = 0; i < Math.min(raw.length, 20); i++) {
+        const row = raw[i];
+        if (!row || !Array.isArray(row)) continue;
+        for (let j = 0; j < row.length; j++) {
+          const val = String(row[j] || '').trim().toLowerCase();
+          if (val === 'no.' || val === 'no' || val === 'ref no' || val === 'reference' || val === 'num' || val === 'ref' || val === 'doc no' || val === 'transaction') colNo = j;
+          if (val === 'amount' || val === 'amt' || val === 'nominal' || val === 'net amount' || val === 'total') colAmt = j;
+          if (val === 'date' || val === 'tanggal' || val === 'trans date') colDate = j;
+          if (val === 'memo' || val === 'description' || val === 'desc' || val === 'name' || val === 'vendor' || val === 'particulars') colDesc = j;
+        }
+        if (colNo !== -1 && colAmt !== -1) {
+          headerIdx = i;
+          break;
+        }
+      }
+
+      // Fallback if header not identified
+      if (colNo === -1) colNo = 0;
+      if (colAmt === -1) colAmt = 1;
+      if (headerIdx === -1) headerIdx = 0;
+
+      const map = new Map();
+      let totalAmount = 0;
+      let totalLines = 0;
+
+      for (let i = headerIdx + 1; i < raw.length; i++) {
+        const row = raw[i];
+        if (!row) continue;
+        const refNo = String(row[colNo] !== undefined && row[colNo] !== null ? row[colNo] : '').trim();
+        const dateVal = colDate !== -1 && row[colDate] !== undefined ? String(row[colDate]).trim() : '';
+        const descVal = colDesc !== -1 && row[colDesc] !== undefined ? String(row[colDesc]).trim() : '';
+        const rawAmt = row[colAmt];
+        const amt = cleanNumber(rawAmt);
+
+        // Skip metadata / blanks / summary totals
+        if (!refNo || dateVal.toLowerCase() === 'beginning balance' || isNaN(amt) || rawAmt === undefined) continue;
+
+        totalAmount += amt;
+        totalLines++;
+
+        if (!map.has(refNo)) {
+          map.set(refNo, { sum: 0, count: 0, rows: [] });
+        }
+        const curr = map.get(refNo);
+        curr.sum += amt;
+        curr.count += 1;
+        curr.rows.push({
+          date: dateVal || '-',
+          description: descVal || 'No description provided',
+          amount: amt
+        });
+      }
+
+      return { map, totalAmount, totalLines };
+    }
+
+    let lastQBResult = null;
+    let lastWIPResult = null;
+
+    function runReconciliationIfReady() {
+      let qbSheet = null;
+      let wipSheet = null;
+
+      const qbSelectVal = document.getElementById('selectQBSheet').value;
+      const wipSelectVal = document.getElementById('selectWIPSheet').value;
+
+      if (currentMode === 'single') {
+        if (!singleWorkbook) return;
+        const qbSheetName = qbSelectVal || singleWorkbook.SheetNames.find(s => s.toLowerCase().includes('quickbook') || s.toLowerCase().includes('qb')) || singleWorkbook.SheetNames[0];
+        const wipSheetName = wipSelectVal || singleWorkbook.SheetNames.find(s => s.toLowerCase().includes('wip') || s.toLowerCase().includes('ledger')) || singleWorkbook.SheetNames[1] || singleWorkbook.SheetNames[0];
+
+        qbSheet = singleWorkbook.Sheets[qbSheetName];
+        wipSheet = singleWorkbook.Sheets[wipSheetName];
+      } else {
+        if (!qbWorkbook || !wipWorkbook) return;
+        const qbSheetName = qbSelectVal || qbWorkbook.SheetNames.find(s => s.toLowerCase().includes('quickbook') || s.toLowerCase().includes('qb')) || qbWorkbook.SheetNames[0];
+        const wipSheetName = wipSelectVal || wipWorkbook.SheetNames.find(s => s.toLowerCase().includes('wip') || s.toLowerCase().includes('ledger')) || wipWorkbook.SheetNames[0];
+
+        qbSheet = qbWorkbook.Sheets[qbSheetName];
+        wipSheet = wipWorkbook.Sheets[wipSheetName];
+      }
+
+      if (!qbSheet || !wipSheet) return;
+
+      lastQBResult = parseTransactionsFromSheet(qbSheet);
+      lastWIPResult = parseTransactionsFromSheet(wipSheet);
+
+      const tolerance = parseFloat(document.getElementById('selectTolerance').value) || 0.01;
+      const allKeys = new Set([...lastQBResult.map.keys(), ...lastWIPResult.map.keys()]);
+      allDiscrepancies = [];
+
+      allKeys.forEach(key => {
+        const qbEntry = lastQBResult.map.get(key) || { sum: 0, count: 0, rows: [] };
+        const wipEntry = lastWIPResult.map.get(key) || { sum: 0, count: 0, rows: [] };
+        const variance = Math.round((qbEntry.sum - wipEntry.sum) * 100) / 100;
+
+        const isAmountDiff = Math.abs(variance) > tolerance;
+        const isCountDiff = qbEntry.count !== wipEntry.count;
+
+        if (isAmountDiff || isCountDiff) {
+          let statusType = 'mismatch';
+          let statusLabel = 'Amount Mismatch';
+
+          if (qbEntry.count === 0) {
+            statusType = 'missing_qb';
+            statusLabel = 'Missing in QB (In WIP only)';
+          } else if (wipEntry.count === 0) {
+            statusType = 'missing_wip';
+            statusLabel = 'Missing in WIP (In QB only)';
+          } else if (!isAmountDiff && isCountDiff) {
+            statusType = 'line_diff';
+            statusLabel = 'Line Count Diff Only';
+          }
+
+          allDiscrepancies.push({
+            ref: key,
+            qbSum: qbEntry.sum,
+            qbLines: qbEntry.count,
+            qbRows: qbEntry.rows,
+            wipSum: wipEntry.sum,
+            wipLines: wipEntry.count,
+            wipRows: wipEntry.rows,
+            variance: variance,
+            statusType: statusType,
+            statusLabel: statusLabel
+          });
+        }
+      });
+
+      // Sort largest absolute variance first
+      allDiscrepancies.sort((a, b) => Math.abs(b.variance) - Math.abs(a.variance));
+
+      // Show sections
+      document.getElementById('metricsSection').style.display = 'block';
+      document.getElementById('resultsCard').style.display = 'block';
+
+      updateMetricsDisplay();
+      updateFilterCounts();
+      renderDiscrepanciesTable();
+    }
+
+    function updateMetricsDisplay() {
+      if (!lastQBResult || !lastWIPResult) return;
+      document.getElementById('metricQBTotal').innerText = formatMoney(lastQBResult.totalAmount);
+      document.getElementById('metricQBLines').innerText = `${lastQBResult.totalLines} transaction line(s)`;
+
+      document.getElementById('metricWIPTotal').innerText = formatMoney(lastWIPResult.totalAmount);
+      document.getElementById('metricWIPLines').innerText = `${lastWIPResult.totalLines} transaction line(s)`;
+
+      const netVariance = Math.round((lastQBResult.totalAmount - lastWIPResult.totalAmount) * 100) / 100;
+      const netElem = document.getElementById('metricVarianceTotal');
+      const statusElem = document.getElementById('metricVarianceStatus');
+      const cardElem = document.getElementById('metricVarianceCard');
+
+      netElem.innerText = formatMoney(netVariance);
+
+      if (Math.abs(netVariance) <= 0.01) {
+        cardElem.className = 'metric-card sage';
+        netElem.className = 'metric-amount badge-variance-balanced';
+        statusElem.innerText = 'Balanced & Reconciled';
+      } else {
+        cardElem.className = 'metric-card rose';
+        netElem.className = 'metric-amount badge-variance-alert';
+        statusElem.innerText = netVariance > 0 ? 'Surplus in QuickBooks' : 'Deficit in QuickBooks';
+      }
+    }
+
+    function updateFilterCounts() {
+      document.getElementById('countAll').innerText = allDiscrepancies.length;
+      document.getElementById('countMismatch').innerText = allDiscrepancies.filter(d => d.statusType === 'mismatch').length;
+      document.getElementById('countMissingQB').innerText = allDiscrepancies.filter(d => d.statusType === 'missing_qb').length;
+      document.getElementById('countMissingWIP').innerText = allDiscrepancies.filter(d => d.statusType === 'missing_wip').length;
+      document.getElementById('countLineDiff').innerText = allDiscrepancies.filter(d => d.statusType === 'line_diff').length;
+    }
+
+    // Filter Chips Event
+    document.getElementById('filterChips').addEventListener('click', (e) => {
+      const btn = e.target.closest('.chip-btn');
+      if (!btn) return;
+      document.querySelectorAll('.chip-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentFilter = btn.getAttribute('data-filter');
+      renderDiscrepanciesTable();
+    });
+
+    // Search Input
+    document.getElementById('searchInput').addEventListener('input', (e) => {
+      searchQuery = e.target.value.trim().toLowerCase();
+      renderDiscrepanciesTable();
+    });
+
+    function renderDiscrepanciesTable() {
+      const tbody = document.getElementById('discrepancyTableBody');
+      tbody.innerHTML = '';
+
+      let filtered = allDiscrepancies;
+      if (currentFilter !== 'all') {
+        filtered = filtered.filter(item => item.statusType === currentFilter);
+      }
+      if (searchQuery) {
+        filtered = filtered.filter(item => item.ref.toLowerCase().includes(searchQuery));
+      }
+
+      document.getElementById('discrepancyCountSubtitle').innerText = 
+        `Showing ${filtered.length} of ${allDiscrepancies.length} discrepancies`;
+
+      if (allDiscrepancies.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="8">
+              <div class="empty-state-perfect">
+                <div class="empty-state-icon">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 6L9 17l-5-5"/></svg>
+                </div>
+                <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.15rem; color: var(--sage-600); margin-bottom: 0.35rem;">Perfect Match! All Records Balanced</h3>
+                <p style="font-size: 0.85rem; color: var(--slate-muted);">No amount variances or line count discrepancies were found between QuickBooks and WIP Ledger.</p>
+              </div>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="8" style="text-align: center; padding: 2.5rem; color: var(--slate-muted); font-size: 0.85rem;">
+              No discrepancies match your search or selected filter.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      filtered.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.addEventListener('click', () => openDrilldownModal(item));
+
+        let badgeClass = 'status-mismatch';
+        if (item.statusType === 'missing_qb') badgeClass = 'status-missing-qb';
+        else if (item.statusType === 'missing_wip') badgeClass = 'status-missing-wip';
+        else if (item.statusType === 'line_diff') badgeClass = 'status-line-diff';
+
+        tr.innerHTML = `
+          <td><span class="ref-code"><span class="petal-accent"></span>${escapeHtml(item.ref)}</span></td>
+          <td>${formatMoney(item.qbSum)}</td>
+          <td><span style="color: var(--slate-muted);">${item.qbLines}</span></td>
+          <td>${formatMoney(item.wipSum)}</td>
+          <td><span style="color: var(--slate-muted);">${item.wipLines}</span></td>
+          <td style="font-weight: 700; ${Math.abs(item.variance) > 0.009 ? 'color: var(--blossom-600);' : 'color: var(--sage-600);'}">
+            ${formatMoney(item.variance)}
+          </td>
+          <td><span class="status-badge ${badgeClass}">${item.statusLabel}</span></td>
+          <td style="text-align: right;">
+            <button class="action-inspect-btn" onclick="event.stopPropagation(); openDrilldownModalByRef('${escapeHtml(item.ref)}')">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+              Inspect
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    // Drilldown Modal Handling with Discrepancy & Missing Marking
+    const drilldownModal = document.getElementById('drilldownModal');
+    const modalCloseBtn = document.getElementById('modalCloseBtn');
+
+    modalCloseBtn.addEventListener('click', () => {
+      drilldownModal.classList.remove('open');
+    });
+
+    drilldownModal.addEventListener('click', (e) => {
+      if (e.target === drilldownModal) {
+        drilldownModal.classList.remove('open');
+      }
+    });
+
+    window.openDrilldownModalByRef = function(ref) {
+      const item = allDiscrepancies.find(d => d.ref === ref);
+      if (item) openDrilldownModal(item);
+    };
+
+    function openDrilldownModal(item) {
+      document.getElementById('modalRefTitle').innerText = `Reference: ${item.ref}`;
+      document.getElementById('modalStatusSubtitle').innerText = `Status: ${item.statusLabel}`;
+
+      document.getElementById('modalQBSum').innerText = formatMoney(item.qbSum);
+      document.getElementById('modalWIPSum').innerText = formatMoney(item.wipSum);
+      document.getElementById('modalVarianceVal').innerText = formatMoney(item.variance);
+
+      document.getElementById('modalQBLinesCount').innerText = `(${item.qbLines} line${item.qbLines === 1 ? '' : 's'})`;
+      document.getElementById('modalWIPLinesCount').innerText = `(${item.wipLines} line${item.wipLines === 1 ? '' : 's'})`;
+
+      // 1. Prepare row matching algorithm
+      const qbAnnotated = item.qbRows.map(r => ({ ...r, status: 'unmatched' }));
+      const wipAnnotated = item.wipRows.map(r => ({ ...r, status: 'unmatched' }));
+
+      // Pair exact amount matches
+      qbAnnotated.forEach(q => {
+        const match = wipAnnotated.find(w => w.status === 'unmatched' && Math.abs(w.amount - q.amount) <= 0.009);
+        if (match) {
+          q.status = 'matched';
+          match.status = 'matched';
+        }
+      });
+
+      // Check if both sides have total matching sum despite different line counts (split transactions)
+      const isNetSumBalanced = Math.abs(item.qbSum - item.wipSum) <= 0.009 && item.qbLines > 0 && item.wipLines > 0;
+      if (isNetSumBalanced) {
+        qbAnnotated.forEach(q => { if (q.status === 'unmatched') q.status = 'split_match'; });
+        wipAnnotated.forEach(w => { if (w.status === 'unmatched') w.status = 'split_match'; });
+      }
+
+      // If one entire side is missing, mark existing side as missing_peer
+      if (item.qbLines === 0) {
+        wipAnnotated.forEach(w => { w.status = 'missing_peer'; });
+      } else if (item.wipLines === 0) {
+        qbAnnotated.forEach(q => { q.status = 'missing_peer'; });
+      }
+
+      // 2. Set Up Alert Banner & Explanatory Text
+      const alertBanner = document.getElementById('modalAlertBanner');
+      const alertText = document.getElementById('modalAlertText');
+
+      if (item.statusType === 'missing_qb') {
+        alertBanner.className = 'drilldown-alert-banner banner-missing-qb';
+        alertText.innerHTML = `<strong>Missing in QuickBooks:</strong> This transaction exists in WIP Ledger across ${item.wipLines} line(s) totaling <strong>${formatMoney(item.wipSum)}</strong>, but has no corresponding record in QuickBooks.`;
+      } else if (item.statusType === 'missing_wip') {
+        alertBanner.className = 'drilldown-alert-banner banner-missing-wip';
+        alertText.innerHTML = `<strong>Missing in WIP Ledger:</strong> This transaction exists in QuickBooks across ${item.qbLines} line(s) totaling <strong>${formatMoney(item.qbSum)}</strong>, but has no corresponding record in WIP Ledger.`;
+      } else if (item.statusType === 'line_diff') {
+        alertBanner.className = 'drilldown-alert-banner banner-line-diff';
+        alertText.innerHTML = `<strong>Line Split / Count Difference:</strong> The total amounts are completely balanced (<strong>${formatMoney(item.qbSum)}</strong>), but QuickBooks records it across ${item.qbLines} line(s) while WIP Ledger records it across ${item.wipLines} line(s).`;
+      } else {
+        const higherSide = item.qbSum > item.wipSum ? 'QuickBooks is higher' : 'WIP Ledger is higher';
+        alertBanner.className = 'drilldown-alert-banner banner-mismatch';
+        alertText.innerHTML = `<strong>Amount Variance Detected:</strong> There is a difference of <strong>${formatMoney(Math.abs(item.variance))}</strong> (${higherSide}). The specific discrepant line(s) causing the variance are highlighted below in rose.`;
+      }
+
+      // 3. Render Panels & Badges
+      const qbPanel = document.getElementById('panelQB');
+      const wipPanel = document.getElementById('panelWIP');
+      const qbBadge = document.getElementById('modalQBPanelBadge');
+      const wipBadge = document.getElementById('modalWIPPanelBadge');
+      const qbContentArea = document.getElementById('modalQBContentArea');
+      const wipContentArea = document.getElementById('modalWIPContentArea');
+
+      // QuickBooks Panel
+      if (item.qbLines === 0) {
+        qbPanel.className = 'drilldown-panel panel-is-missing';
+        qbBadge.className = 'panel-badge badge-missing';
+        qbBadge.innerText = 'Missing in QB';
+        qbContentArea.innerHTML = `
+          <div class="empty-ledger-card">
+            <div class="empty-ledger-title">No Record in QuickBooks</div>
+            <p class="empty-ledger-desc">This transaction reference is completely missing from your QuickBooks report.</p>
+          </div>
+        `;
+      } else {
+        const qbHasDiscrepant = qbAnnotated.some(r => r.status === 'unmatched');
+        qbPanel.className = `drilldown-panel ${qbHasDiscrepant ? 'panel-has-discrepancy' : ''}`;
+        
+        if (!qbHasDiscrepant) {
+          qbBadge.className = 'panel-badge badge-ok';
+          qbBadge.innerText = isNetSumBalanced ? 'Net Balanced' : 'All Lines Matched';
+        } else {
+          qbBadge.className = 'panel-badge badge-alert';
+          qbBadge.innerText = `${qbAnnotated.filter(r => r.status === 'unmatched').length} Discrepant Line(s)`;
+        }
+
+        qbContentArea.innerHTML = `
+          <table class="drilldown-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Description / Memo</th>
+                <th style="text-align: right;">Amount & Status</th>
+              </tr>
+            </thead>
+            <tbody id="modalQBRowsBody"></tbody>
+          </table>
+        `;
+
+        const qbTbody = document.getElementById('modalQBRowsBody');
+        qbAnnotated.forEach(r => {
+          const tr = document.createElement('tr');
+          let pillHtml = '';
+          
+          if (r.status === 'matched') {
+            tr.className = 'row-matched';
+            pillHtml = `<span class="row-status-pill pill-matched">✓ Matched</span>`;
+          } else if (r.status === 'split_match') {
+            tr.className = 'row-matched';
+            pillHtml = `<span class="row-status-pill pill-split-match">Split Matched</span>`;
+          } else if (r.status === 'missing_peer') {
+            tr.className = 'row-missing-peer';
+            pillHtml = `<span class="row-status-pill pill-missing-peer">✕ Missing in WIP</span>`;
+          } else {
+            tr.className = 'row-discrepant';
+            pillHtml = `<span class="row-status-pill pill-discrepant">⚠ Discrepant</span>`;
+          }
+
+          tr.innerHTML = `
+            <td style="color: var(--slate-muted); white-space: nowrap;">${escapeHtml(r.date)}</td>
+            <td>${escapeHtml(r.description)}</td>
+            <td style="text-align: right; font-weight: 600;">
+              ${formatMoney(r.amount)}
+              ${pillHtml}
+            </td>
+          `;
+          qbTbody.appendChild(tr);
+        });
+      }
+
+      // WIP Ledger Panel
+      if (item.wipLines === 0) {
+        wipPanel.className = 'drilldown-panel panel-is-missing';
+        wipBadge.className = 'panel-badge badge-missing';
+        wipBadge.innerText = 'Missing in WIP';
+        wipContentArea.innerHTML = `
+          <div class="empty-ledger-card">
+            <div class="empty-ledger-title">No Record in WIP Ledger</div>
+            <p class="empty-ledger-desc">This transaction reference is completely missing from your WIP Ledger report.</p>
+          </div>
+        `;
+      } else {
+        const wipHasDiscrepant = wipAnnotated.some(r => r.status === 'unmatched');
+        wipPanel.className = `drilldown-panel ${wipHasDiscrepant ? 'panel-has-discrepancy' : ''}`;
+
+        if (!wipHasDiscrepant) {
+          wipBadge.className = 'panel-badge badge-ok';
+          wipBadge.innerText = isNetSumBalanced ? 'Net Balanced' : 'All Lines Matched';
+        } else {
+          wipBadge.className = 'panel-badge badge-alert';
+          wipBadge.innerText = `${wipAnnotated.filter(r => r.status === 'unmatched').length} Discrepant Line(s)`;
+        }
+
+        wipContentArea.innerHTML = `
+          <table class="drilldown-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Description / Memo</th>
+                <th style="text-align: right;">Amount & Status</th>
+              </tr>
+            </thead>
+            <tbody id="modalWIPRowsBody"></tbody>
+          </table>
+        `;
+
+        const wipTbody = document.getElementById('modalWIPRowsBody');
+        wipAnnotated.forEach(r => {
+          const tr = document.createElement('tr');
+          let pillHtml = '';
+
+          if (r.status === 'matched') {
+            tr.className = 'row-matched';
+            pillHtml = `<span class="row-status-pill pill-matched">✓ Matched</span>`;
+          } else if (r.status === 'split_match') {
+            tr.className = 'row-matched';
+            pillHtml = `<span class="row-status-pill pill-split-match">Split Matched</span>`;
+          } else if (r.status === 'missing_peer') {
+            tr.className = 'row-missing-peer';
+            pillHtml = `<span class="row-status-pill pill-missing-peer">✕ Missing in QB</span>`;
+          } else {
+            tr.className = 'row-discrepant';
+            pillHtml = `<span class="row-status-pill pill-discrepant">⚠ Discrepant</span>`;
+          }
+
+          tr.innerHTML = `
+            <td style="color: var(--slate-muted); white-space: nowrap;">${escapeHtml(r.date)}</td>
+            <td>${escapeHtml(r.description)}</td>
+            <td style="text-align: right; font-weight: 600;">
+              ${formatMoney(r.amount)}
+              ${pillHtml}
+            </td>
+          `;
+          wipTbody.appendChild(tr);
+        });
+      }
+
+      drilldownModal.classList.add('open');
+    }
+
+    // Export Excel
+    document.getElementById('exportBtn').addEventListener('click', () => {
+      if (!allDiscrepancies.length) return;
+
+      const exportData = allDiscrepancies.map(item => ({
+        "Reference No.": item.ref,
+        "Status": item.statusLabel,
+        "QuickBooks Total": item.qbSum,
+        "QB Lines": item.qbLines,
+        "WIP Ledger Total": item.wipSum,
+        "WIP Lines": item.wipLines,
+        "Variance (QB - WIP)": item.variance
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(exportData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Discrepancies");
+      XLSX.writeFile(wb, `Andrula_Reconciliation_${new Date().toISOString().slice(0,10)}.xlsx`);
+    });
+  </script>
+</body>
+</html>
