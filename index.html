@@ -5169,7 +5169,7 @@
         qbAnnotated.forEach(q => { q.status = 'missing_peer'; });
       }
 
-      // 2. Set Up Alert Banner & Explanatory Text
+      // 1. Alert Banner & Explanatory Text
       const alertBanner = document.getElementById('modalAlertBanner');
       const alertText = document.getElementById('modalAlertText');
       const activeRecipe = RECONCILIATION_RECIPES[currentRecipeId] || RECONCILIATION_RECIPES.wip_gl;
@@ -5189,8 +5189,17 @@
         alertText.innerHTML = `<strong>Amount Variance Detected:</strong> There is a difference of <strong>${formatMoney(Math.abs(item.variance))}</strong> (${higherSide}). The specific discrepant line(s) causing the variance are highlighted below in rose.`;
       }
 
-      // 3. Render Panels & Badges with Dynamic Grid Layout
+      // 2. Render Panels and Rows
+      renderModalPanelsAndRows(item);
+
+      drilldownModal.classList.add('open');
+    }
+
+    function renderModalPanelsAndRows(item) {
+      const activeRecipe = RECONCILIATION_RECIPES[currentRecipeId] || RECONCILIATION_RECIPES.wip_gl;
       const columnsContainer = document.getElementById('modalDrilldownColumns');
+      const viewControls = document.getElementById('modalViewControls');
+
       if (columnsContainer) {
         columnsContainer.classList.remove('columns-qb-missing', 'columns-wip-missing');
         if (item.qbLines === 0) {
@@ -5200,6 +5209,15 @@
         }
       }
 
+      // Hide or show View & Sort Controls
+      if (viewControls) {
+        viewControls.style.display = (item.qbLines > 0 && item.wipLines > 0) ? 'flex' : 'none';
+        // Sync active button
+        document.querySelectorAll('#modalSortGroup .btn-segment').forEach(btn => {
+          btn.classList.toggle('active', btn.getAttribute('data-sort') === currentModalSortMode);
+        });
+      }
+
       const qbPanel = document.getElementById('panelQB');
       const wipPanel = document.getElementById('panelWIP');
       const qbBadge = document.getElementById('modalQBPanelBadge');
@@ -5207,7 +5225,7 @@
       const qbContentArea = document.getElementById('modalQBContentArea');
       const wipContentArea = document.getElementById('modalWIPContentArea');
 
-      // Primary Panel (Side A)
+      // Case A: Side A (QuickBooks) is completely missing
       if (item.qbLines === 0) {
         qbPanel.className = 'drilldown-panel panel-is-missing';
         qbBadge.className = 'panel-badge badge-missing';
@@ -5218,100 +5236,10 @@
             <p class="empty-ledger-desc">This transaction reference is completely missing from your ${escapeHtml(activeRecipe.sideAName)} report.</p>
           </div>
         `;
-      } else {
-        if (item.wipLines === 0) {
-          qbPanel.className = 'drilldown-panel panel-has-discrepancy';
-          qbBadge.className = 'panel-badge badge-alert';
-          qbBadge.innerText = `No Counterpart in ${activeRecipe.sideBName}`;
-        } else {
-          const qbHasDiscrepant = qbAnnotated.some(r => r.status === 'unmatched');
-          qbPanel.className = `drilldown-panel ${qbHasDiscrepant ? 'panel-has-discrepancy' : ''}`;
 
-          if (!qbHasDiscrepant) {
-            qbBadge.className = 'panel-badge badge-ok';
-            qbBadge.innerText = isNetSumBalanced ? 'Net Balanced' : 'All Lines Matched';
-          } else {
-            qbBadge.className = 'panel-badge badge-alert';
-            qbBadge.innerText = `${qbAnnotated.filter(r => r.status === 'unmatched').length} Discrepant Line(s)`;
-          }
-        }
-
-        qbContentArea.innerHTML = `
-          <table class="drilldown-table">
-            <thead>
-              <tr>
-                <th style="width: 85px; white-space: nowrap;">Date</th>
-                <th>Description / Memo</th>
-                <th class="th-num" style="width: 120px; text-align: right; white-space: nowrap;">Amount</th>
-                <th style="width: 130px; text-align: center; white-space: nowrap;">Status</th>
-              </tr>
-            </thead>
-            <tbody id="modalQBRowsBody"></tbody>
-          </table>
-        `;
-
-        const qbTbody = document.getElementById('modalQBRowsBody');
-        qbAnnotated.forEach(r => {
-          const tr = document.createElement('tr');
-          let pillHtml = '';
-
-          if (r.status === 'matched') {
-            tr.className = 'row-matched';
-            pillHtml = `<span class="row-status-pill pill-matched">✓ Matched</span>`;
-          } else if (r.status === 'split_match') {
-            tr.className = 'row-matched';
-            pillHtml = `<span class="row-status-pill pill-split-match">Split Matched</span>`;
-          } else if (r.status === 'missing_peer') {
-            tr.className = 'row-missing-peer';
-            pillHtml = `<span class="row-status-pill pill-missing-peer" title="Absent from ${escapeHtml(activeRecipe.sideBName)}">✕ Not in ${escapeHtml(activeRecipe.sideBName)}</span>`;
-          } else {
-            tr.className = 'row-discrepant';
-            pillHtml = `<span class="row-status-pill pill-discrepant">⚠ Discrepant</span>`;
-          }
-
-          tr.innerHTML = `
-            <td style="color: var(--slate-muted); white-space: nowrap; font-size: 0.76rem;">${escapeHtml(r.date || '-')}</td>
-            <td style="word-break: break-word; font-size: 0.78rem;">${escapeHtml(r.description || 'No description provided')}</td>
-            <td class="td-num" style="font-weight: 700; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums;">
-              ${formatMoney(r.amount)}
-            </td>
-            <td style="text-align: center; white-space: nowrap;">
-              ${pillHtml}
-            </td>
-          `;
-          qbTbody.appendChild(tr);
-        });
-      }
-
-      // Counterpart Panel (Side B)
-      if (item.wipLines === 0) {
-        wipPanel.className = 'drilldown-panel panel-is-missing';
-        wipBadge.className = 'panel-badge badge-missing';
-        wipBadge.innerText = `Missing in ${activeRecipe.sideBName}`;
-        wipContentArea.innerHTML = `
-          <div class="empty-ledger-card">
-            <div class="empty-ledger-title">No Record in ${escapeHtml(activeRecipe.sideBName)}</div>
-            <p class="empty-ledger-desc">This transaction reference is completely missing from your ${escapeHtml(activeRecipe.sideBName)} records.</p>
-          </div>
-        `;
-      } else {
-        if (item.qbLines === 0) {
-          wipPanel.className = 'drilldown-panel panel-has-discrepancy';
-          wipBadge.className = 'panel-badge badge-alert';
-          wipBadge.innerText = `No Counterpart in ${activeRecipe.sideAName}`;
-        } else {
-          const wipHasDiscrepant = wipAnnotated.some(r => r.status === 'unmatched');
-          wipPanel.className = `drilldown-panel ${wipHasDiscrepant ? 'panel-has-discrepancy' : ''}`;
-
-          if (!wipHasDiscrepant) {
-            wipBadge.className = 'panel-badge badge-ok';
-            wipBadge.innerText = isNetSumBalanced ? 'Net Balanced' : 'All Lines Matched';
-          } else {
-            wipBadge.className = 'panel-badge badge-alert';
-            wipBadge.innerText = `${wipAnnotated.filter(r => r.status === 'unmatched').length} Discrepant Line(s)`;
-          }
-        }
-
+        wipPanel.className = 'drilldown-panel panel-has-discrepancy';
+        wipBadge.className = 'panel-badge badge-alert';
+        wipBadge.innerText = `No Counterpart in ${activeRecipe.sideAName}`;
         wipContentArea.innerHTML = `
           <table class="drilldown-table">
             <thead>
@@ -5325,42 +5253,257 @@
             <tbody id="modalWIPRowsBody"></tbody>
           </table>
         `;
-
         const wipTbody = document.getElementById('modalWIPRowsBody');
-        wipAnnotated.forEach(r => {
+        item.wipRows.forEach(r => {
           const tr = document.createElement('tr');
-          let pillHtml = '';
-
-          if (r.status === 'matched') {
-            tr.className = 'row-matched';
-            pillHtml = `<span class="row-status-pill pill-matched">✓ Matched</span>`;
-          } else if (r.status === 'split_match') {
-            tr.className = 'row-matched';
-            pillHtml = `<span class="row-status-pill pill-split-match">Split Matched</span>`;
-          } else if (r.status === 'missing_peer') {
-            tr.className = 'row-missing-peer';
-            pillHtml = `<span class="row-status-pill pill-missing-peer" title="Absent from ${escapeHtml(activeRecipe.sideAName)}">✕ Not in ${escapeHtml(activeRecipe.sideAName)}</span>`;
-          } else {
-            tr.className = 'row-discrepant';
-            pillHtml = `<span class="row-status-pill pill-discrepant">⚠ Discrepant</span>`;
-          }
-
+          tr.className = 'row-missing-peer';
           tr.innerHTML = `
             <td style="color: var(--slate-muted); white-space: nowrap; font-size: 0.76rem;">${escapeHtml(r.date || '-')}</td>
             <td style="word-break: break-word; font-size: 0.78rem;">${escapeHtml(r.description || 'No description provided')}</td>
-            <td class="td-num" style="font-weight: 700; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums;">
-              ${formatMoney(r.amount)}
-            </td>
+            <td class="td-num" style="font-weight: 700; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums;">${formatMoney(r.amount)}</td>
             <td style="text-align: center; white-space: nowrap;">
-              ${pillHtml}
+              <span class="row-status-pill pill-missing-peer" title="Absent from ${escapeHtml(activeRecipe.sideAName)}">✕ Not in ${escapeHtml(activeRecipe.sideAName)}</span>
             </td>
           `;
           wipTbody.appendChild(tr);
         });
+        return;
       }
 
-      drilldownModal.classList.add('open');
+      // Case B: Side B (WIP) is completely missing
+      if (item.wipLines === 0) {
+        wipPanel.className = 'drilldown-panel panel-is-missing';
+        wipBadge.className = 'panel-badge badge-missing';
+        wipBadge.innerText = `Missing in ${activeRecipe.sideBName}`;
+        wipContentArea.innerHTML = `
+          <div class="empty-ledger-card">
+            <div class="empty-ledger-title">No Record in ${escapeHtml(activeRecipe.sideBName)}</div>
+            <p class="empty-ledger-desc">This transaction reference is completely missing from your ${escapeHtml(activeRecipe.sideBName)} records.</p>
+          </div>
+        `;
+
+        qbPanel.className = 'drilldown-panel panel-has-discrepancy';
+        qbBadge.className = 'panel-badge badge-alert';
+        qbBadge.innerText = `No Counterpart in ${activeRecipe.sideBName}`;
+        qbContentArea.innerHTML = `
+          <table class="drilldown-table">
+            <thead>
+              <tr>
+                <th style="width: 85px; white-space: nowrap;">Date</th>
+                <th>Description / Memo</th>
+                <th class="th-num" style="width: 120px; text-align: right; white-space: nowrap;">Amount</th>
+                <th style="width: 130px; text-align: center; white-space: nowrap;">Status</th>
+              </tr>
+            </thead>
+            <tbody id="modalQBRowsBody"></tbody>
+          </table>
+        `;
+        const qbTbody = document.getElementById('modalQBRowsBody');
+        item.qbRows.forEach(r => {
+          const tr = document.createElement('tr');
+          tr.className = 'row-missing-peer';
+          tr.innerHTML = `
+            <td style="color: var(--slate-muted); white-space: nowrap; font-size: 0.76rem;">${escapeHtml(r.date || '-')}</td>
+            <td style="word-break: break-word; font-size: 0.78rem;">${escapeHtml(r.description || 'No description provided')}</td>
+            <td class="td-num" style="font-weight: 700; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums;">${formatMoney(r.amount)}</td>
+            <td style="text-align: center; white-space: nowrap;">
+              <span class="row-status-pill pill-missing-peer" title="Absent from ${escapeHtml(activeRecipe.sideBName)}">✕ Not in ${escapeHtml(activeRecipe.sideBName)}</span>
+            </td>
+          `;
+          qbTbody.appendChild(tr);
+        });
+        return;
+      }
+
+      // Case C: Both Ledgers Populated -> Side-by-Side Paired Alignment
+      const pairedRows = pairDrilldownLines(item.qbRows, item.wipRows, currentFormulaType, currentTolerance, currentModalSortMode);
+
+      // Evaluate Net Balance vs Discrepancies
+      const isNetSumBalanced = Math.abs(item.variance) <= currentTolerance;
+      const discrepantCount = pairedRows.filter(p => p.status !== 'matched' && p.status !== 'split_match').length;
+
+      if (isNetSumBalanced) {
+        qbPanel.className = 'drilldown-panel';
+        wipPanel.className = 'drilldown-panel';
+        qbBadge.className = 'panel-badge badge-ok';
+        wipBadge.className = 'panel-badge badge-ok';
+        qbBadge.innerText = discrepantCount === 0 ? 'All Lines Matched' : 'Net Balanced';
+        wipBadge.innerText = discrepantCount === 0 ? 'All Lines Matched' : 'Net Balanced';
+      } else {
+        qbPanel.className = 'drilldown-panel panel-has-discrepancy';
+        wipPanel.className = 'drilldown-panel panel-has-discrepancy';
+        qbBadge.className = 'panel-badge badge-alert';
+        wipBadge.className = 'panel-badge badge-alert';
+        const label = discrepantCount > 0 ? `${discrepantCount} Discrepant Line${discrepantCount === 1 ? '' : 's'}` : 'Amount Variance';
+        qbBadge.innerText = label;
+        wipBadge.innerText = label;
+      }
+
+      // Setup Tables
+      qbContentArea.innerHTML = `
+        <table class="drilldown-table">
+          <thead>
+            <tr>
+              <th style="width: 85px; white-space: nowrap;">Date</th>
+              <th>Description / Memo</th>
+              <th class="th-num" style="width: 120px; text-align: right; white-space: nowrap;">Amount</th>
+              <th style="width: 130px; text-align: center; white-space: nowrap;">Status</th>
+            </tr>
+          </thead>
+          <tbody id="modalQBRowsBody"></tbody>
+        </table>
+      `;
+
+      wipContentArea.innerHTML = `
+        <table class="drilldown-table">
+          <thead>
+            <tr>
+              <th style="width: 85px; white-space: nowrap;">Date</th>
+              <th>Description / Memo</th>
+              <th class="th-num" style="width: 120px; text-align: right; white-space: nowrap;">Amount</th>
+              <th style="width: 130px; text-align: center; white-space: nowrap;">Status</th>
+            </tr>
+          </thead>
+          <tbody id="modalWIPRowsBody"></tbody>
+        </table>
+      `;
+
+      const qbTbody = document.getElementById('modalQBRowsBody');
+      const wipTbody = document.getElementById('modalWIPRowsBody');
+
+      pairedRows.forEach((pair, idx) => {
+        // --- Side A (QuickBooks) Row ---
+        const trQB = document.createElement('tr');
+        trQB.setAttribute('data-row-index', idx);
+
+        if (pair.qb) {
+          if (pair.status === 'matched') {
+            trQB.className = 'row-matched';
+            trQB.innerHTML = `
+              <td style="color: var(--slate-muted); white-space: nowrap; font-size: 0.76rem;">${escapeHtml(pair.qb.date || '-')}</td>
+              <td style="word-break: break-word; font-size: 0.78rem;">${escapeHtml(pair.qb.description || 'No description provided')}</td>
+              <td class="td-num" style="font-weight: 700; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums;">${formatMoney(pair.qb.amount)}</td>
+              <td style="text-align: center; white-space: nowrap;">
+                <span class="row-status-pill pill-matched">✓ Matched</span>
+              </td>
+            `;
+          } else if (pair.status === 'split_match') {
+            trQB.className = 'row-matched';
+            trQB.innerHTML = `
+              <td style="color: var(--slate-muted); white-space: nowrap; font-size: 0.76rem;">${escapeHtml(pair.qb.date || '-')}</td>
+              <td style="word-break: break-word; font-size: 0.78rem;">${escapeHtml(pair.qb.description || 'No description provided')}</td>
+              <td class="td-num" style="font-weight: 700; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums;">${formatMoney(pair.qb.amount)}</td>
+              <td style="text-align: center; white-space: nowrap;">
+                <span class="row-status-pill pill-split-match">Split Matched</span>
+              </td>
+            `;
+          } else {
+            trQB.className = 'row-discrepant';
+            trQB.innerHTML = `
+              <td style="color: var(--slate-muted); white-space: nowrap; font-size: 0.76rem;">${escapeHtml(pair.qb.date || '-')}</td>
+              <td style="word-break: break-word; font-size: 0.78rem;">${escapeHtml(pair.qb.description || 'No description provided')}</td>
+              <td class="td-num" style="font-weight: 700; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--blossom-600);">${formatMoney(pair.qb.amount)}</td>
+              <td style="text-align: center; white-space: nowrap;">
+                <span class="row-status-pill pill-discrepant">⚠ Discrepant</span>
+              </td>
+            `;
+          }
+        } else {
+          trQB.className = 'row-placeholder';
+          trQB.innerHTML = `
+            <td colspan="4" class="empty-counterpart-cell">
+              <span class="empty-counterpart-pill">— No counterpart line in ${escapeHtml(activeRecipe.sideAName)} —</span>
+            </td>
+          `;
+        }
+        qbTbody.appendChild(trQB);
+
+        // --- Side B (WIP) Row ---
+        const trWIP = document.createElement('tr');
+        trWIP.setAttribute('data-row-index', idx);
+
+        if (pair.wip) {
+          if (pair.status === 'matched') {
+            trWIP.className = 'row-matched';
+            trWIP.innerHTML = `
+              <td style="color: var(--slate-muted); white-space: nowrap; font-size: 0.76rem;">${escapeHtml(pair.wip.date || '-')}</td>
+              <td style="word-break: break-word; font-size: 0.78rem;">${escapeHtml(pair.wip.description || 'No description provided')}</td>
+              <td class="td-num" style="font-weight: 700; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums;">${formatMoney(pair.wip.amount)}</td>
+              <td style="text-align: center; white-space: nowrap;">
+                <span class="row-status-pill pill-matched">✓ Matched</span>
+              </td>
+            `;
+          } else if (pair.status === 'split_match') {
+            trWIP.className = 'row-matched';
+            trWIP.innerHTML = `
+              <td style="color: var(--slate-muted); white-space: nowrap; font-size: 0.76rem;">${escapeHtml(pair.wip.date || '-')}</td>
+              <td style="word-break: break-word; font-size: 0.78rem;">${escapeHtml(pair.wip.description || 'No description provided')}</td>
+              <td class="td-num" style="font-weight: 700; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums;">${formatMoney(pair.wip.amount)}</td>
+              <td style="text-align: center; white-space: nowrap;">
+                <span class="row-status-pill pill-split-match">Split Matched</span>
+              </td>
+            `;
+          } else {
+            trWIP.className = 'row-discrepant';
+            trWIP.innerHTML = `
+              <td style="color: var(--slate-muted); white-space: nowrap; font-size: 0.76rem;">${escapeHtml(pair.wip.date || '-')}</td>
+              <td style="word-break: break-word; font-size: 0.78rem;">${escapeHtml(pair.wip.description || 'No description provided')}</td>
+              <td class="td-num" style="font-weight: 700; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--blossom-600);">${formatMoney(pair.wip.amount)}</td>
+              <td style="text-align: center; white-space: nowrap;">
+                <span class="row-status-pill pill-discrepant">⚠ Discrepant</span>
+              </td>
+            `;
+          }
+        } else {
+          trWIP.className = 'row-placeholder';
+          trWIP.innerHTML = `
+            <td colspan="4" class="empty-counterpart-cell">
+              <span class="empty-counterpart-pill">— No counterpart line in ${escapeHtml(activeRecipe.sideBName)} —</span>
+            </td>
+          `;
+        }
+        wipTbody.appendChild(trWIP);
+      });
+
+      // Synchronized Hover Highlight Listener
+      attachModalSyncHover(qbTbody, wipTbody);
     }
+
+    function attachModalSyncHover(tbodyA, tbodyB) {
+      function onOver(e) {
+        const tr = e.target.closest('tr[data-row-index]');
+        if (!tr) return;
+        const idx = tr.getAttribute('data-row-index');
+        tbodyA.querySelectorAll(`tr[data-row-index="${idx}"]`).forEach(el => el.classList.add('is-hovered'));
+        tbodyB.querySelectorAll(`tr[data-row-index="${idx}"]`).forEach(el => el.classList.add('is-hovered'));
+      }
+      function onOut(e) {
+        const tr = e.target.closest('tr[data-row-index]');
+        if (!tr) return;
+        const idx = tr.getAttribute('data-row-index');
+        tbodyA.querySelectorAll(`tr[data-row-index="${idx}"]`).forEach(el => el.classList.remove('is-hovered'));
+        tbodyB.querySelectorAll(`tr[data-row-index="${idx}"]`).forEach(el => el.classList.remove('is-hovered'));
+      }
+      tbodyA.onmouseover = onOver;
+      tbodyA.onmouseout = onOut;
+      tbodyB.onmouseover = onOver;
+      tbodyB.onmouseout = onOut;
+    }
+
+    // Modal Sort Segment Buttons Listener
+    document.querySelectorAll('#modalSortGroup .btn-segment').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const mode = e.currentTarget.getAttribute('data-sort');
+        if (!mode || mode === currentModalSortMode) return;
+        currentModalSortMode = mode;
+        document.querySelectorAll('#modalSortGroup .btn-segment').forEach(b => {
+          b.classList.toggle('active', b.getAttribute('data-sort') === mode);
+        });
+        if (currentModalItem) {
+          renderModalPanelsAndRows(currentModalItem);
+        }
+      });
+    });
 
     // Export Excel (Exports filtered discrepancies with audit status)
     document.getElementById('exportBtn').addEventListener('click', () => {
