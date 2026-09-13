@@ -214,6 +214,22 @@
       box-shadow: 0 4px 12px rgba(214, 88, 118, 0.12);
     }
 
+    .mode-badge-pill {
+      font-size: 0.68rem;
+      font-weight: 600;
+      padding: 0.15rem 0.5rem;
+      border-radius: var(--radius-pill);
+      background: rgba(148, 163, 184, 0.15);
+      color: var(--slate-muted);
+      letter-spacing: 0.02em;
+      transition: all 0.2s ease;
+    }
+
+    .tab-btn.active .mode-badge-pill {
+      background: var(--blossom-100);
+      color: var(--blossom-700);
+    }
+
     /* Dropzone */
     .dropzone-grid {
       display: grid;
@@ -1796,36 +1812,28 @@
 
     <!-- Upload Card -->
     <div class="card">
-      <!-- Mode Selection Tabs -->
+      <!-- Mode Selection Tabs (2 Universal Modes) -->
       <div class="tabs-nav">
-        <button class="tab-btn active" id="tabSingleMode">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-            <polyline points="14 2 14 8 20 8" />
-          </svg>
-          Single Workbook (2 Sheets)
-        </button>
-        <button class="tab-btn" id="tabDualMode">
+        <button class="tab-btn active" id="tabDualMode" title="Compare two separate statements or ledgers of any supported format">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v1" />
             <path d="M18 8h4a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-4" />
           </svg>
-          Two Separate Files (QB & WIP)
+          Two Separate Files
+          <span class="mode-badge-pill">Excel, CSV, PDF</span>
         </button>
-        <button class="tab-btn" id="tabSupplierMode">
+        <button class="tab-btn" id="tabSingleMode" title="Compare two sheets within a single Excel workbook">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
             <polyline points="14 2 14 8 20 8" />
-            <line x1="16" y1="13" x2="8" y2="13" />
-            <line x1="16" y1="17" x2="8" y2="17" />
-            <polyline points="10 9 9 9 8 9" />
           </svg>
-          Supplier SOA (PDF vs QB)
+          Single Workbook
+          <span class="mode-badge-pill">2 Sheets</span>
         </button>
       </div>
 
       <!-- Single File Upload Zone -->
-      <div id="singleDropzoneWrapper">
+      <div id="singleDropzoneWrapper" style="display: none;">
         <div class="dropzone" id="dropzoneSingle">
           <div class="dropzone-icon">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -1835,18 +1843,17 @@
               <line x1="12" y1="3" x2="12" y2="15"></line>
             </svg>
           </div>
-          <p class="dropzone-title">Click to choose file or drag & drop here</p>
-          <p class="dropzone-desc">Select an Excel file (<code>.xlsx</code> or <code>.xls</code>) with QuickBooks and
-            WIP Ledger sheets</p>
+          <p class="dropzone-title">Click to choose workbook or drag & drop here</p>
+          <p class="dropzone-desc">Select an Excel file (<code>.xlsx</code> or <code>.xls</code>) containing both sheets</p>
           <div class="dropzone-file-name" id="singleFileName"></div>
           <input type="file" id="fileInputSingle" accept=".xlsx, .xls" style="display: none;">
         </div>
       </div>
 
-      <!-- Dual File Upload Zone -->
-      <div id="dualDropzoneWrapper" style="display: none;">
+      <!-- Dual File Upload Zone (Universal: Both Sides Accept Excel, CSV, PDF) -->
+      <div id="dualDropzoneWrapper">
         <div class="dropzone-grid dual">
-          <!-- QuickBooks Dropzone -->
+          <!-- Side A (Primary Statement / Ledger) Dropzone -->
           <div class="dropzone" id="dropzoneQB">
             <div class="dropzone-icon">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1854,13 +1861,13 @@
                 <polyline points="14 2 14 8 20 8" />
               </svg>
             </div>
-            <p class="dropzone-title">1. QuickBooks Report</p>
-            <p class="dropzone-desc">Click or drop your QuickBooks export file (<code>.xlsx</code>)</p>
+            <p class="dropzone-title" id="dropzoneQBTitle">1. Primary Statement / Report</p>
+            <p class="dropzone-desc" id="dropzoneQBDesc">Click or drop file (<code>.xlsx, .xls, .csv, .pdf</code>)</p>
             <div class="dropzone-file-name" id="qbFileName"></div>
-            <input type="file" id="fileInputQB" accept=".xlsx, .xls" style="display: none;">
+            <input type="file" id="fileInputQB" accept=".xlsx, .xls, .csv, .pdf" style="display: none;">
           </div>
 
-          <!-- WIP Ledger Dropzone -->
+          <!-- Side B (Counterpart Ledger / ERP) Dropzone -->
           <div class="dropzone" id="dropzoneWIP">
             <div class="dropzone-icon">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1868,42 +1875,10 @@
                 <polyline points="14 2 14 8 20 8" />
               </svg>
             </div>
-            <p class="dropzone-title">2. WIP Ledger Report</p>
-            <p class="dropzone-desc">Click or drop your WIP Ledger file (<code>.xlsx</code>)</p>
+            <p class="dropzone-title" id="dropzoneWIPTitle">2. Counterpart Ledger / ERP</p>
+            <p class="dropzone-desc" id="dropzoneWIPDesc">Click or drop file (<code>.xlsx, .xls, .csv, .pdf</code>)</p>
             <div class="dropzone-file-name" id="wipFileName"></div>
-            <input type="file" id="fileInputWIP" accept=".xlsx, .xls" style="display: none;">
-          </div>
-        </div>
-      </div>
-
-      <div id="supplierDropzoneWrapper" style="display: none;">
-        <div class="dropzone-grid dual">
-          <div class="dropzone" id="dropzoneSupplierPDF">
-            <div class="dropzone-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                <polyline points="14 2 14 8 20 8" />
-                <line x1="16" y1="13" x2="8" y2="13" />
-                <line x1="16" y1="17" x2="8" y2="17" />
-                <polyline points="10 9 9 9 8 9" />
-              </svg>
-            </div>
-            <p class="dropzone-title">1. Supplier Statement (PDF, Excel, or CSV)</p>
-            <p class="dropzone-desc">Click or drop vendor statement (<code>.pdf, .xlsx, .xls, .csv</code>)</p>
-            <div class="dropzone-file-name" id="supplierPdfName"></div>
-            <input type="file" id="fileInputSupplierPDF" accept=".pdf, .xlsx, .xls, .csv" style="display: none;">
-          </div>
-          <div class="dropzone" id="dropzoneSupplierQB">
-            <div class="dropzone-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                <polyline points="14 2 14 8 20 8" />
-              </svg>
-            </div>
-            <p class="dropzone-title">2. QuickBooks SOA (Excel)</p>
-            <p class="dropzone-desc">Click or drop QuickBooks Supplier Balance Detail (<code>.xlsx</code>, <code>.xls</code>)</p>
-            <div class="dropzone-file-name" id="supplierQbName"></div>
-            <input type="file" id="fileInputSupplierQB" accept=".xlsx, .xls" style="display: none;">
+            <input type="file" id="fileInputWIP" accept=".xlsx, .xls, .csv, .pdf" style="display: none;">
           </div>
         </div>
       </div>
@@ -2530,8 +2505,8 @@
               <span class="shortcut-keys"><span class="shortcut-key">Ctrl</span><span class="shortcut-key">E</span></span>
             </div>
             <div class="shortcut-item">
-              <span class="shortcut-desc">Switch Mode (1 / 2 / 3)</span>
-              <span class="shortcut-keys"><span class="shortcut-key">1</span><span class="shortcut-key">2</span><span class="shortcut-key">3</span></span>
+              <span class="shortcut-desc">Switch Mode (1: Two Files / 2: Single)</span>
+              <span class="shortcut-keys"><span class="shortcut-key">1</span><span class="shortcut-key">2</span></span>
             </div>
             <div class="shortcut-item">
               <span class="shortcut-desc">Toggle Hotkeys Guide</span>
@@ -2596,7 +2571,7 @@
 
   <script>
     // State
-    let currentMode = 'single'; // 'single' | 'dual' | 'supplier'
+    let currentMode = 'dual'; // 'dual' | 'single'
     let currentRecipeId = 'wip_gl';
     let currentFormulaType = 'direct'; // 'direct' | 'contra' | 'abs_diff'
     let currentRefNormalizer = 'fuzzy_standard'; // 'fuzzy_standard' | 'alphanumeric' | 'exact'
@@ -2604,6 +2579,8 @@
     let singleWorkbook = null;
     let qbWorkbook = null;
     let wipWorkbook = null;
+    let qbPdfResult = null;
+    let wipPdfResult = null;
     let supplierPdfResult = null;
     let supplierSoaWorkbook = null;
     let supplierQbWorkbook = null;
@@ -2952,38 +2929,27 @@
       return (isNeg ? '-' : '') + cfg.symbol + formatted;
     }
 
-    // Tab Switching
+    // Tab Switching (Universal 2-Option Modes)
     const tabSingleMode = document.getElementById('tabSingleMode');
     const tabDualMode = document.getElementById('tabDualMode');
-    const tabSupplierMode = document.getElementById('tabSupplierMode');
     const singleDropzoneWrapper = document.getElementById('singleDropzoneWrapper');
     const dualDropzoneWrapper = document.getElementById('dualDropzoneWrapper');
-    const supplierDropzoneWrapper = document.getElementById('supplierDropzoneWrapper');
 
     function switchMode(mode) {
+      if (mode === 'supplier') mode = 'dual';
       currentMode = mode;
-      tabSingleMode.classList.toggle('active', mode === 'single');
-      tabDualMode.classList.toggle('active', mode === 'dual');
-      if (tabSupplierMode) tabSupplierMode.classList.toggle('active', mode === 'supplier');
+      if (tabSingleMode) tabSingleMode.classList.toggle('active', mode === 'single');
+      if (tabDualMode) tabDualMode.classList.toggle('active', mode === 'dual');
 
-      singleDropzoneWrapper.style.display = mode === 'single' ? 'block' : 'none';
-      dualDropzoneWrapper.style.display = mode === 'dual' ? 'block' : 'none';
-      if (supplierDropzoneWrapper) supplierDropzoneWrapper.style.display = mode === 'supplier' ? 'block' : 'none';
-
-      // Auto-sync recipe default when switching between supplier and standard ledger modes
-      if (mode === 'supplier' && currentRecipeId === 'wip_gl') {
-        applyRecipe('supplier_ap');
-      } else if ((mode === 'single' || mode === 'dual') && currentRecipeId === 'supplier_ap') {
-        applyRecipe('wip_gl');
-      }
+      if (singleDropzoneWrapper) singleDropzoneWrapper.style.display = mode === 'single' ? 'block' : 'none';
+      if (dualDropzoneWrapper) dualDropzoneWrapper.style.display = mode === 'dual' ? 'block' : 'none';
 
       updateLabelsForMode();
       populateSheetDropdowns();
 
       // Ensure that if current mode has no files loaded yet, stale results are cleanly hidden
       const isReady = (mode === 'single' && singleWorkbook) ||
-                      (mode === 'dual' && qbWorkbook && wipWorkbook) ||
-                      (mode === 'supplier' && (supplierPdfResult || supplierSoaWorkbook) && supplierQbWorkbook);
+                      (mode === 'dual' && (qbWorkbook || qbPdfResult) && (wipWorkbook || wipPdfResult));
 
       if (isReady) {
         runReconciliationIfReady();
@@ -2993,13 +2959,10 @@
       }
     }
 
-    tabSingleMode.addEventListener('click', () => switchMode('single'));
-    tabDualMode.addEventListener('click', () => switchMode('dual'));
-    if (tabSupplierMode) {
-      tabSupplierMode.addEventListener('click', () => switchMode('supplier'));
-    }
+    if (tabSingleMode) tabSingleMode.addEventListener('click', () => switchMode('single'));
+    if (tabDualMode) tabDualMode.addEventListener('click', () => switchMode('dual'));
 
-    // Dropzone setup helper for Excel files
+    // Dropzone setup helper for Excel files (Single Workbook Mode)
     function setupDropzone(dropzoneEl, inputEl, nameEl, onFileLoaded) {
       if (!dropzoneEl || !inputEl) return;
       dropzoneEl.addEventListener('click', () => inputEl.click());
@@ -3056,8 +3019,8 @@
       }
     }
 
-    // Dropzone setup helper for Supplier Statements (PDF, Excel, or CSV)
-    function setupPdfDropzone(dropzoneEl, inputEl, nameEl, onStatementLoaded) {
+    // Universal Dropzone setup helper for Side A and Side B (.xlsx, .xls, .csv, .pdf)
+    function setupUniversalDropzone(dropzoneEl, inputEl, nameEl, isSideA) {
       if (!dropzoneEl || !inputEl) return;
       dropzoneEl.addEventListener('click', () => inputEl.click());
 
@@ -3074,56 +3037,71 @@
         e.preventDefault();
         dropzoneEl.classList.remove('drag-over');
         if (e.dataTransfer.files.length) {
-          processStatementFile(e.dataTransfer.files[0]);
+          processFile(e.dataTransfer.files[0]);
         }
       });
 
       inputEl.addEventListener('change', (e) => {
         if (e.target.files.length) {
-          processStatementFile(e.target.files[0]);
+          processFile(e.target.files[0]);
         }
       });
 
-      async function processStatementFile(file) {
+      async function processFile(file) {
         if (!file) return;
         const lower = file.name.toLowerCase();
+        const isPdf = lower.endsWith('.pdf');
         const isSpreadsheet = lower.endsWith('.xlsx') || lower.endsWith('.xls') || lower.endsWith('.csv');
 
+        if (!isPdf && !isSpreadsheet) {
+          alert(`Unsupported file format for "${file.name}". Please upload an Excel spreadsheet (.xlsx, .xls), CSV file (.csv), or digital PDF statement (.pdf).`);
+          return;
+        }
+
         if (nameEl) {
-          nameEl.innerText = `${file.name} (Extracting...)`;
+          nameEl.innerText = `${file.name} (${isPdf ? 'Extracting PDF...' : 'Reading spreadsheet...'})`;
           nameEl.style.display = 'inline-block';
         }
         dropzoneEl.classList.add('loaded');
+
         try {
           const arrayBuffer = await file.arrayBuffer();
-          if (isSpreadsheet) {
-            supplierSoaWorkbook = XLSX.read(arrayBuffer, { type: 'array', cellDates: true });
-            supplierPdfResult = null;
-            populateSheetDropdowns();
-            const chosenSheet = document.getElementById('selectWIPSheet').value || supplierSoaWorkbook.SheetNames[0];
-            const sheet = supplierSoaWorkbook.Sheets[chosenSheet];
-            const result = parseTransactionsFromSheet(sheet, true);
-            if (nameEl) {
-              nameEl.innerText = `${file.name} (${result.totalLines} lines in "${chosenSheet}")`;
-            }
-            onStatementLoaded(result);
-          } else {
-            supplierSoaWorkbook = null;
+
+          if (isPdf) {
             const result = await parseSupplierPDF(arrayBuffer);
-            supplierPdfResult = result;
-            populateSheetDropdowns();
+            if (isSideA) {
+              qbPdfResult = result;
+              qbWorkbook = null;
+            } else {
+              wipPdfResult = result;
+              wipWorkbook = null;
+            }
             if (nameEl) {
               nameEl.innerText = `${file.name} (${result.totalLines} lines found)`;
             }
-            onStatementLoaded(result);
+          } else {
+            const data = new Uint8Array(arrayBuffer);
+            const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+            if (isSideA) {
+              qbWorkbook = workbook;
+              qbPdfResult = null;
+            } else {
+              wipWorkbook = workbook;
+              wipPdfResult = null;
+            }
+            if (nameEl) {
+              nameEl.innerText = `${file.name} (${workbook.SheetNames.length} sheet${workbook.SheetNames.length > 1 ? 's' : ''})`;
+            }
           }
+
+          reviewedRefs.clear();
+          populateSheetDropdowns();
+          runReconciliationIfReady();
         } catch (err) {
-          console.error('Supplier statement parsing error:', err);
-          alert('Failed to parse supplier statement: ' + err.message);
+          console.error(`Error processing file ${file.name}:`, err);
+          alert(`Could not process "${file.name}": ${err.message}`);
           dropzoneEl.classList.remove('loaded');
-          if (nameEl) {
-            nameEl.innerText = `${file.name} (Error parsing)`;
-          }
+          if (nameEl) nameEl.innerText = `${file.name} (Error parsing)`;
         }
       }
     }
@@ -3141,53 +3119,19 @@
       }
     );
 
-    // Dual mode dropzones
-    setupDropzone(
+    // Universal Dual mode dropzones (Both Side A and Side B accept Excel, CSV, PDF)
+    setupUniversalDropzone(
       document.getElementById('dropzoneQB'),
       document.getElementById('fileInputQB'),
       document.getElementById('qbFileName'),
-      (wb) => {
-        qbWorkbook = wb;
-        reviewedRefs.clear();
-        populateSheetDropdowns();
-        runReconciliationIfReady();
-      }
+      true
     );
 
-    setupDropzone(
+    setupUniversalDropzone(
       document.getElementById('dropzoneWIP'),
       document.getElementById('fileInputWIP'),
       document.getElementById('wipFileName'),
-      (wb) => {
-        wipWorkbook = wb;
-        reviewedRefs.clear();
-        populateSheetDropdowns();
-        runReconciliationIfReady();
-      }
-    );
-
-    // Supplier mode dropzones
-    setupPdfDropzone(
-      document.getElementById('dropzoneSupplierPDF'),
-      document.getElementById('fileInputSupplierPDF'),
-      document.getElementById('supplierPdfName'),
-      (result) => {
-        supplierPdfResult = result;
-        reviewedRefs.clear();
-        runReconciliationIfReady();
-      }
-    );
-
-    setupDropzone(
-      document.getElementById('dropzoneSupplierQB'),
-      document.getElementById('fileInputSupplierQB'),
-      document.getElementById('supplierQbName'),
-      (wb) => {
-        supplierQbWorkbook = wb;
-        reviewedRefs.clear();
-        populateSheetDropdowns();
-        runReconciliationIfReady();
-      }
+      false
     );
 
     // Config Panel & Recipe Hub Event Handlers
@@ -3422,6 +3366,13 @@
     function applyTemplateObject(tmpl) {
       if (!tmpl) return;
 
+      // 0. Mode Migration & Activation
+      if (tmpl.mode) {
+        let m = tmpl.mode;
+        if (m === 'supplier') m = 'dual';
+        switchMode(m);
+      }
+
       // 1. Recipe
       const recId = tmpl.recipeId || 'custom';
       currentRecipeId = recId;
@@ -3590,6 +3541,7 @@
           id: 'tmpl_' + Date.now(),
           name: nameVal,
           createdAt: new Date().toISOString(),
+          mode: currentMode === 'single' ? 'single' : 'dual',
           recipeId: currentRecipeId,
           formula: currentFormulaType,
           refNormalizer: currentRefNormalizer,
@@ -3677,6 +3629,7 @@
         const template = {
           version: '1.0',
           appName: 'Andrula',
+          mode: currentMode === 'single' ? 'single' : 'dual',
           recipeName: activeRecipe.name,
           recipeId: currentRecipeId,
           formula: currentFormulaType,
@@ -3711,6 +3664,7 @@
             if (!data.recipeId && !data.formula) {
               throw new Error('Missing recipe parameters in JSON.');
             }
+            if (data.mode === 'supplier') data.mode = 'dual';
             data.id = 'tmpl_' + Date.now();
             data.name = data.recipeName || data.name || 'Imported Recipe (' + new Date().toLocaleDateString() + ')';
             saveTemplateToStorage(data);
@@ -3791,29 +3745,20 @@
           appendOpt(qbSelect, name, name, name === qbSheetName);
           appendOpt(wipSelect, name, name, name === wipSheetName);
         });
-      } else if (currentMode === 'dual') {
+      } else if (currentMode === 'dual' || currentMode === 'supplier') {
         if (qbWorkbook) {
           qbWorkbook.SheetNames.forEach(name => {
             appendOpt(qbSelect, name, name);
           });
+        } else if (qbPdfResult) {
+          appendOpt(qbSelect, '', 'Extracted from PDF Statement');
         }
+
         if (wipWorkbook) {
           wipWorkbook.SheetNames.forEach(name => {
             appendOpt(wipSelect, name, name);
           });
-        }
-      } else if (currentMode === 'supplier') {
-        if (supplierQbWorkbook) {
-          supplierQbWorkbook.SheetNames.forEach(name => {
-            appendOpt(qbSelect, name, name);
-          });
-        }
-        wipSelect.innerHTML = '';
-        if (supplierSoaWorkbook) {
-          supplierSoaWorkbook.SheetNames.forEach(name => {
-            appendOpt(wipSelect, name, name);
-          });
-        } else {
+        } else if (wipPdfResult) {
           appendOpt(wipSelect, '', 'Extracted from PDF Statement');
         }
       }
@@ -4135,32 +4080,27 @@
 
         qbResult = parseTransactionsFromSheet(qbSheet, false);
         wipResult = parseTransactionsFromSheet(wipSheet, true);
-      } else if (currentMode === 'dual') {
-        if (!qbWorkbook || !wipWorkbook) return;
-        const qbSheetName = qbSelectVal || qbWorkbook.SheetNames.find(s => s.toLowerCase().includes('quickbook') || s.toLowerCase().includes('qb')) || qbWorkbook.SheetNames[0];
-        const wipSheetName = wipSelectVal || wipWorkbook.SheetNames.find(s => s.toLowerCase().includes('wip') || s.toLowerCase().includes('ledger')) || wipWorkbook.SheetNames[0];
+      } else if (currentMode === 'dual' || currentMode === 'supplier') {
+        if ((!qbWorkbook && !qbPdfResult) || (!wipWorkbook && !wipPdfResult)) return;
 
-        const qbSheet = qbWorkbook.Sheets[qbSheetName];
-        const wipSheet = wipWorkbook.Sheets[wipSheetName];
-        if (!qbSheet || !wipSheet) return;
+        // Side A transaction ingestion (Excel/CSV or PDF)
+        if (qbPdfResult) {
+          qbResult = qbPdfResult;
+        } else if (qbWorkbook) {
+          const qbSheetName = qbSelectVal || qbWorkbook.SheetNames.find(s => s.toLowerCase().includes('quickbook') || s.toLowerCase().includes('qb') || s.toLowerCase().includes('primary') || s.toLowerCase().includes('statement')) || qbWorkbook.SheetNames[0];
+          const qbSheet = qbWorkbook.Sheets[qbSheetName];
+          if (!qbSheet) return;
+          qbResult = parseTransactionsFromSheet(qbSheet, false);
+        }
 
-        qbResult = parseTransactionsFromSheet(qbSheet, false);
-        wipResult = parseTransactionsFromSheet(wipSheet, true);
-      } else if (currentMode === 'supplier') {
-        if ((!supplierPdfResult && !supplierSoaWorkbook) || !supplierQbWorkbook) return;
-        const qbSheetName = qbSelectVal || supplierQbWorkbook.SheetNames.find(s => s.toLowerCase().includes('quickbook') || s.toLowerCase().includes('qb') || s.toLowerCase().includes('supplier') || s.toLowerCase().includes('balance') || s.toLowerCase().includes('sheet')) || supplierQbWorkbook.SheetNames[0];
-        const qbSheet = supplierQbWorkbook.Sheets[qbSheetName];
-        if (!qbSheet) return;
-
-        qbResult = parseTransactionsFromSheet(qbSheet, false);
-        if (supplierSoaWorkbook) {
-          const wipSheetName = wipSelectVal || supplierSoaWorkbook.SheetNames[0];
-          const wipSheet = supplierSoaWorkbook.Sheets[wipSheetName];
-          if (wipSheet) {
-            wipResult = parseTransactionsFromSheet(wipSheet, true);
-          }
-        } else {
-          wipResult = supplierPdfResult;
+        // Side B transaction ingestion (Excel/CSV or PDF)
+        if (wipPdfResult) {
+          wipResult = wipPdfResult;
+        } else if (wipWorkbook) {
+          const wipSheetName = wipSelectVal || wipWorkbook.SheetNames.find(s => s.toLowerCase().includes('wip') || s.toLowerCase().includes('ledger') || s.toLowerCase().includes('counterpart') || s.toLowerCase().includes('ap') || s.toLowerCase().includes('gl')) || wipWorkbook.SheetNames[0];
+          const wipSheet = wipWorkbook.Sheets[wipSheetName];
+          if (!wipSheet) return;
+          wipResult = parseTransactionsFromSheet(wipSheet, true);
         }
       }
 
@@ -4322,6 +4262,27 @@
 
     function updateLabelsForMode() {
       const activeRecipe = RECONCILIATION_RECIPES[currentRecipeId] || RECONCILIATION_RECIPES.wip_gl;
+
+      // Dynamically update Side A and Side B Dropzone Titles & Descriptions
+      const dropA = document.getElementById('dropzoneQBTitle');
+      if (dropA) dropA.innerText = `1. ${activeRecipe.sideAName}`;
+      const dropADesc = document.getElementById('dropzoneQBDesc');
+      if (dropADesc) dropADesc.innerHTML = `Click or drop ${activeRecipe.sideAName} file (<code>.xlsx, .xls, .csv, .pdf</code>)`;
+
+      const dropB = document.getElementById('dropzoneWIPTitle');
+      if (dropB) dropB.innerText = `2. ${activeRecipe.sideBName}`;
+      const dropBDesc = document.getElementById('dropzoneWIPDesc');
+      if (dropBDesc) dropBDesc.innerHTML = `Click or drop ${activeRecipe.sideBName} file (<code>.xlsx, .xls, .csv, .pdf</code>)`;
+
+      // Update Column Mapping Titles & Sheet selector labels
+      const titleA = document.getElementById('titleSideAMap');
+      if (titleA) titleA.innerText = `Side A: ${activeRecipe.sideAName} Columns`;
+      const titleB = document.getElementById('titleSideBMap');
+      if (titleB) titleB.innerText = `Side B: ${activeRecipe.sideBName} Columns`;
+      const labelA = document.getElementById('labelQBSheet');
+      if (labelA) labelA.innerText = `Primary Sheet (${activeRecipe.sideAName})`;
+      const labelB = document.getElementById('labelWIPSheet');
+      if (labelB) labelB.innerText = `Counterpart Sheet (${activeRecipe.sideBName})`;
 
       // Metric card tags
       const tagQB = document.querySelector('#metricsSection .metric-card:nth-child(1) .metric-tag');
@@ -4989,14 +4950,12 @@
         return;
       }
 
-      // 6. Global Mode Switching with numbers 1, 2, 3 (when not typing in an input)
+      // 6. Global Mode Switching: 1 for Two Separate Files (dual), 2 for Single Workbook (single)
       if (!isTyping) {
         if (e.key === '1') {
-          switchMode('single');
-        } else if (e.key === '2') {
           switchMode('dual');
-        } else if (e.key === '3') {
-          switchMode('supplier');
+        } else if (e.key === '2') {
+          switchMode('single');
         }
       }
     });
