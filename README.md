@@ -99,7 +99,64 @@ Andrula works with standard Excel files (`.xlsx` or `.xls`). The parser looks fo
 | **Date** *(optional)* | `Date`, `Tanggal`, `Trans Date` |
 | **Description** *(optional)* | `Memo`, `Description`, `Desc`, `Name`, `Vendor`, `Particulars` |
 
-If your file uses custom headers or sheet names, open the **"Sheet & Column Settings"** panel on the page to select them manually.
+---
+
+## Reconciliation Recipe Engine & Multi-Formula Matching
+
+Andrula includes a **Reconciliation Recipe Engine** that adapts to any accounting schedule, subledger, or financial schedule. Open the **Reconciliation Recipe & Formula Settings** control center on the upload card to configure:
+
+### 1. Built-in Recipe Presets
+- **QuickBooks vs WIP Ledger**: Direct difference matching ($A - B = 0$) with fuzzy reference cleanup.
+- **Supplier Statement vs Accounts Payable**: Contra / inverse sign matching ($A + B = 0$) where supplier credits match ledger debits.
+- **Bank Statement vs Cash Book**: Contra matching with date and reference cross-matching.
+- **Intercompany Accounts (Entity A vs Entity B)**: Inverse matching across sister legal entities.
+- **Custom Recipe**: Fully customizable formula, normalizer, tolerance, and column overrides.
+
+### 2. Configurable Matching Formulas
+- **Direct Net Difference ($A - B = 0$)**: Standard comparison where positive and negative signs match between ledgers.
+- **Contra / Inverse Sign ($A + B = 0$)**: Balances opposite-sign entries (e.g. Bank credits + Cash book debits = 0).
+- **Absolute Magnitude Difference ($|A| - |B| = 0$)**: Matches total volume or magnitude regardless of positive/negative accounting convention.
+
+### 3. Reference Number Normalizers
+- **Fuzzy Standard (Recommended)**: Automatically strips common prefixes (`INV-`, `VCH-`, `BILL-`, `REF-`, `#`), strips trailing punctuation, and trims leading zeroes (`000452` matches `452`).
+- **Alphanumeric Only**: Removes all special characters, spaces, slashes, and hyphens (e.g., `INV/2026/08` matches `INV202608`).
+- **Exact Match**: Strict case-insensitive character comparison.
+
+### 4. Dynamic Column Mapping & Separate Debit/Credit Overrides
+When spreadsheets are uploaded, candidate columns are automatically extracted and populated into dropdowns for:
+- **Side A (Primary Ledger)**: Reference Number, Amount (Net/Signed), Debit (Dr), Credit (Cr), Date, and Description.
+- **Side B (Counterpart Ledger)**: Reference Number, Amount (Net/Signed), Debit (Dr), Credit (Cr), Date, and Description.
+Accountants can map single net amount columns or separate Debit/Credit columns ($Amount = Debit - Credit$) without modifying source files.
+
+### 5. Multi-Line ERP Split Reports ("Fill-Down Blank References")
+Detailed ERP reports (e.g. QuickBooks Detailed, SAP, Sage 50/300, Netsuite, MYOB) often print the voucher reference number only on the first split row, leaving subsequent line items with amounts but empty reference cells.
+- Enable **Fill-down blank references** in the Recipe Settings panel.
+- Andrula automatically inherits the parent voucher reference and transaction date across all split rows until an empty separator row, subtotal, or new voucher is reached.
+
+### 6. Universal Supplier Statement Ingestion (PDF, Excel, or CSV)
+More than half of vendors provide statements of account in spreadsheet formats rather than PDF.
+- The **Supplier Statement SOA** dropzone accepts `.pdf`, `.xlsx`, `.xls`, and `.csv`.
+- If an Excel or CSV file is uploaded, Andrula automatically extracts the statement transactions via the spreadsheet parser.
+- For PDF statements, text items are grouped and sorted by **visual Y/X coordinates**, reconstructing true tabular rows even when PDF generators write columns out of visual order.
+
+### 7. Accounting Period Cutoff & Date Range Filter
+Supplier statements frequently include invoices from prior months or future dating:
+- Use the **Cutoff Date Filter** (`From` & `To` date inputs) in the results toolbar to isolate records within your target accounting period.
+- Discrepancies and status filter counts immediately update to reflect only transactions within the active cutoff window, preventing false discrepancies from timing differences.
+
+### 8. Template Management (Save / Export / Import JSON)
+Save time during recurring monthly closes by preserving your configuration profiles:
+- **Save Template**: Store current settings (recipe, formula, tolerance, normalizer, fill-down toggle, sheet names, and column mappings) directly in browser storage.
+- **Export JSON**: Export active configurations as clean `.json` files to share across your accounting and audit team.
+- **Import JSON**: Load `.json` configuration templates instantly.
+
+### 9. Drill-Down Detail Modal with Side-by-Side Paired Ledger Alignment
+Inspect any transaction voucher in depth:
+- **1-to-1 Counterpart Pairing**: Each line in the primary ledger is matched and aligned side-by-side with its counterpart on the exact same horizontal row baseline.
+- **Smart Tie-Breaking**: When multiple lines share identical amounts, transactions are intelligently paired by matching dates and memo descriptions before falling back to index sequence.
+- **Dashed Placeholder Rows**: Unpaired or discrepant transactions render an empty placeholder slot on the missing side (`— No counterpart line in [Peer] —`), ensuring the tables never drift vertically.
+- **3-Way View Order Switcher**: Toggle instantly between **`Discrepancies First`** (pins problem lines causing the variance right at the top), **`By Amount`** (ordered largest to smallest value), and **`File Order`** (original spreadsheet order).
+- **Synchronized Hover**: Hovering over any line highlights both counterpart rows simultaneously across ledgers.
 
 ---
 
