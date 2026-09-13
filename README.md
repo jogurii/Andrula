@@ -6,15 +6,17 @@ A modular, browser-based financial and ledger reconciliation engine for accounta
 
 ## Features
 
-- **Three Reconciliation Modes**:
-  - **Single Workbook**: Upload one Excel file containing both QuickBooks and WIP sheets.
-  - **Two Separate Files**: Upload QuickBooks and WIP Ledger exports independently.
-  - **Supplier Statement vs QuickBooks**: Reconcile external vendor statements (PDF or Excel) directly against your QuickBooks Accounts Payable (AP) ledger.
+- **Streamlined 2-Option Universal Reconciliation Layout**:
+  - **Two Separate Files (Default, 90% of Closes)**: Compare two separate files of **any** format (`.xlsx`, `.xls`, `.csv`, `.pdf`) on both Side A and Side B. Supports all combinations (Excel ↔ Excel, PDF ↔ Excel, CSV ↔ CSV, PDF ↔ CSV, PDF ↔ PDF).
+  - **Single Workbook (10% of Closes)**: Compare two sheets within a single Excel workbook (`.xlsx`, `.xls`).
+- **Universal Multi-Format Ingestion**:
+  - Both dropzones automatically route spreadsheets to SheetJS and PDF statements to the visual coordinate extraction engine.
+  - Dropzone titles, descriptions, column mappers, and table headers dynamically adapt to the active accounting recipe (e.g. *Supplier SOA vs AP*, *Bank Rec*, *QuickBooks vs WIP*).
 - **Automatic Detection with Manual Control**:
   - Automatically identifies common sheet names (`QuickBooks`, `QB`, `WIP`, `Ledger`) and columns (`No.`, `Ref No`, `Amount`, `Date`, `Memo/Description`).
   - Optional settings panel to manually choose sheets or customize variance tolerance.
 - **Detailed Discrepancy Breakdown & Audit Triage**:
-  - Categorizes records by status: *Amount Mismatch*, *Missing in QuickBooks*, *Missing in WIP Ledger*, or *Line Count Difference*.
+  - Categorizes records by status: *Amount Mismatch*, *Missing in Primary Ledger*, *Missing in Counterpart Ledger*, or *Line Count Difference*.
   - Persistent **"Mark as Reviewed"** audit tracking with live progress counter (e.g., `12 of 38 Reviewed (32%)`).
   - Flexible display options: Choose **10, 25, 50, 100 per page** or **All** for full continuous scroll with browser `Ctrl+F`.
   - Real-time search and status filter tabs.
@@ -25,7 +27,7 @@ A modular, browser-based financial and ledger reconciliation engine for accounta
 - **Built-In Keyboard Shortcuts**:
   - Full keyboard control for high-speed triage without touching the mouse.
 - **Multi-Currency Support**:
-  - Formats numbers in AED (default for UAE), USD, EUR, GBP, IDR, SGD, or AUD.
+  - Formats numbers in 14 major currencies: AED, USD, EUR, GBP, SAR, QAR, OMR, BHD, KWD, EGP, INR, SGD, AUD, and CAD.
 - **Excel Export**:
   - Download reconciliation results directly into a structured `.xlsx` spreadsheet, including your audit review statuses.
 
@@ -53,9 +55,8 @@ Andrula includes hotkeys designed specifically for accountants performing high-v
 | <kbd>/</kbd> or <kbd>Ctrl</kbd> + <kbd>K</kbd> | **Focus Search** | Instantly focuses and selects the search input |
 | <kbd>Ctrl</kbd> + <kbd>E</kbd> | **Export to Excel** | Downloads the filtered discrepancies spreadsheet |
 | <kbd>Ctrl</kbd> + <kbd>F</kbd> | **In-Page Find** | Browser native search (set page size to **All** for continuous scroll) |
-| <kbd>1</kbd> | **Single Workbook Mode** | Switches to 1 Excel File (QB + WIP sheets) mode |
-| <kbd>2</kbd> | **Dual File Mode** | Switches to 2 Separate Files (QB & WIP) mode |
-| <kbd>3</kbd> | **Supplier Statement Mode** | Switches to Supplier Statement vs QuickBooks mode |
+| <kbd>1</kbd> | **Two Separate Files Mode** | Switches to 2 Separate Files (`dual`) mode (accepts Excel, CSV, PDF) |
+| <kbd>2</kbd> | **Single Workbook Mode** | Switches to 1 Excel File (2 sheets in 1 workbook) mode |
 
 > [!TIP]
 > **Accountant Rapid-Triage Workflow**: Click any discrepant row to inspect details. Press <kbd>M</kbd> to mark as reviewed, then press <kbd>→</kbd> to cycle to the next issue instantly without moving your hands to your mouse.
