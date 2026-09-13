@@ -1495,11 +1495,48 @@
       background: var(--blossom-400);
     }
 
+    /* Drilldown View & Sort Controls */
+    .drilldown-view-controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 0.85rem;
+      flex-wrap: wrap;
+      background: var(--surface-white);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-sm);
+      padding: 0.45rem 0.85rem;
+    }
+
+    .drilldown-controls-hint {
+      font-size: 0.76rem;
+      color: var(--slate-muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .drilldown-sort-group {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+    }
+
+    .drilldown-sort-label {
+      font-size: 0.74rem;
+      font-weight: 600;
+      color: var(--slate-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
     /* 4-Column Row-Level Status Marking */
     .drilldown-table {
       width: 100%;
       border-collapse: collapse;
       font-size: 0.8rem;
+      table-layout: fixed;
     }
 
     .drilldown-table th {
@@ -1520,6 +1557,51 @@
       padding: 0.65rem 0.75rem;
       border-bottom: 1px solid #f8eaee;
       vertical-align: middle;
+      height: 48px;
+      box-sizing: border-box;
+      transition: background-color 0.15s ease;
+    }
+
+    /* Synchronized cross-ledger row hover */
+    .drilldown-table tr.is-hovered {
+      background-color: rgba(224, 90, 119, 0.08) !important;
+    }
+
+    .drilldown-table tr.row-matched.is-hovered {
+      background-color: rgba(107, 142, 114, 0.09) !important;
+    }
+
+    /* Empty Placeholder row when counterpart line is missing */
+    tr.row-placeholder {
+      background-color: #fafaf9;
+    }
+
+    tr.row-placeholder td.empty-counterpart-cell {
+      text-align: center;
+      vertical-align: middle;
+      color: var(--slate-muted);
+      font-size: 0.74rem;
+      border-bottom: 1px dashed #e7e5e4;
+      background: repeating-linear-gradient(
+        -45deg,
+        #fcfbfb,
+        #fcfbfb 8px,
+        #f7f5f5 8px,
+        #f7f5f5 16px
+      );
+    }
+
+    .empty-counterpart-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.2rem 0.65rem;
+      border-radius: var(--radius-pill);
+      background: #f5f5f4;
+      border: 1px dashed #d6d3d1;
+      color: #78716c;
+      font-weight: 500;
+      font-size: 0.72rem;
     }
 
     /* Specific Row Highlights */
@@ -2282,6 +2364,22 @@
             <line x1="12" y1="16" x2="12.01" y2="16"></line>
           </svg>
           <div id="modalAlertText">Detailed discrepancy notes.</div>
+        </div>
+
+        <!-- View & Sort Controls for Paired Comparison -->
+        <div class="drilldown-view-controls" id="modalViewControls">
+          <span class="drilldown-controls-hint">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+            Side-by-side paired rows. Unmatched lines align horizontally with opposite placeholders.
+          </span>
+          <div class="drilldown-sort-group">
+            <span class="drilldown-sort-label">Order:</span>
+            <div class="btn-group-segmented" id="modalSortGroup">
+              <button type="button" class="btn-segment active" data-sort="discrepancies" id="btnSortDiscrepancies" title="Pin discrepant & unmatched lines to the top">Discrepancies First</button>
+              <button type="button" class="btn-segment" data-sort="amount" id="btnSortAmount" title="Sort all lines from largest to smallest value">By Amount</button>
+              <button type="button" class="btn-segment" data-sort="file_order" id="btnSortFileOrder" title="View lines in their original spreadsheet sequence">File Order</button>
+            </div>
+          </div>
         </div>
 
         <!-- Two Columns of Underlying Rows with Discrepant/Missing Indicators -->
