@@ -5549,6 +5549,38 @@
         lastQBResult = { totalAmount: 22820000.50, totalLines: 6, map: new Map() };
         lastWIPResult = { totalAmount: 28720000.50, totalLines: 9, map: new Map() };
         allDiscrepancies = [
+          {
+            ref: 'JVT-18458',
+            qbSum: -436539.61,
+            qbLines: 9,
+            wipSum: -436539.59,
+            wipLines: 9,
+            variance: -0.02,
+            statusType: 'mismatch',
+            statusLabel: 'Amount Mismatch',
+            qbRows: [
+              { date: '2026-06-30', description: 'Structural Concrete Pour Phase 1', amount: -57454.66 },
+              { date: '2026-06-30', description: 'High Tensile Steel Rebar Grade 60', amount: -42339.78 },
+              { date: '2026-06-30', description: 'Ceramic Floor Tiles Procurement', amount: -41600.18 },
+              { date: '2026-06-30', description: 'Tempered Glass Panels Lot 4', amount: -34554.57 },
+              { date: '2026-06-30', description: 'Aluminum Extrusion Window Frames', amount: -32812.54 },
+              { date: '2026-06-30', description: 'Plumbing Copper Piping & Fittings', amount: -26448.83 },
+              { date: '2026-06-30', description: 'Low Voltage Electrical Armored Cables', amount: -26229.20 },
+              { date: '2026-06-30', description: 'Submersible Water Pumps & Valves', amount: -23962.03 },
+              { date: '2026-06-30', description: 'Miscellaneous Hardware Screws & Bolts', amount: -259.36 }
+            ],
+            wipRows: [
+              { date: '2026-06-29', description: 'Submersible Water Pumps & Valves', amount: -23962.03 },
+              { date: '2026-06-29', description: 'Tempered Glass Panels Lot 4', amount: -34554.57 },
+              { date: '2026-06-29', description: 'Aluminum Extrusion Window Frames', amount: -32812.54 },
+              { date: '2026-06-29', description: 'Low Voltage Electrical Armored Cables', amount: -26229.20 },
+              { date: '2026-06-29', description: 'High Tensile Steel Rebar Grade 60', amount: -42339.78 },
+              { date: '2026-06-29', description: 'Structural Concrete Pour Phase 1', amount: -57454.66 },
+              { date: '2026-06-29', description: 'Ceramic Floor Tiles Procurement', amount: -41600.18 },
+              { date: '2026-06-29', description: 'Plumbing Copper Piping & Fittings', amount: -26448.83 },
+              { date: '2026-06-29', description: 'Miscellaneous Hardware Screws & Bolts', amount: -259.34 }
+            ]
+          },
           { ref: 'VCH-98101', qbSum: 14500000.00, qbLines: 3, wipSum: 12000000.00, wipLines: 2, variance: 2500000.00, statusType: 'mismatch', statusLabel: 'Amount Mismatch', qbRows: [{date:'2026-03-01', description:'INV-101 Materials Part A', amount:7000000},{date:'2026-03-01', description:'INV-101 Materials Part B', amount:7500000}], wipRows: [{date:'2026-03-01', description:'INV-101 Supplier Billing', amount:12000000}] },
           { ref: 'VCH-98102', qbSum: 0.00, qbLines: 0, wipSum: 8400000.00, wipLines: 1, variance: -8400000.00, statusType: 'missing_qb', statusLabel: 'Missing in QB', qbRows: [], wipRows: [{date:'2026-03-05', description:'Direct Factory Shipment', amount:8400000}] },
           { ref: 'VCH-98103', qbSum: 3200000.00, qbLines: 1, wipSum: 3200000.00, wipLines: 4, variance: 0.00, statusType: 'line_diff', statusLabel: 'Line Count Diff Only', qbRows: [{date:'2026-03-10', description:'Batch PO 990 Consolidated', amount:3200000}], wipRows: [{date:'2026-03-10', description:'Sub-item A', amount:800000},{date:'2026-03-10', description:'Sub-item B', amount:800000},{date:'2026-03-10', description:'Sub-item C', amount:800000},{date:'2026-03-10', description:'Sub-item D', amount:800000}] },

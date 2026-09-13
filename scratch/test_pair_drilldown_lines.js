@@ -3,7 +3,10 @@ const fs = require('fs');
 const path = require('path');
 
 // Extract pairDrilldownLines from index.html
-const indexHtml = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+const htmlPath = fs.existsSync(path.join(process.cwd(), 'index.html'))
+  ? path.join(process.cwd(), 'index.html')
+  : path.join(__dirname, '..', 'index.html');
+const indexHtml = fs.readFileSync(htmlPath, 'utf8');
 
 // We test both directly in Node context and extracted from index.html
 function getPairDrilldownLinesFunction() {
