@@ -574,6 +574,34 @@
       padding: 1rem;
     }
 
+    .column-map-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+      min-height: 26px;
+    }
+
+    .column-map-card-title {
+      font-weight: 700;
+      font-size: 0.82rem;
+      color: var(--slate-title);
+    }
+
+    .column-map-source-badge {
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--sage-700);
+      background: var(--sage-50);
+      border: 1px solid var(--sage-200);
+      border-radius: var(--radius-pill);
+      padding: 0.15rem 0.55rem;
+      white-space: nowrap;
+      letter-spacing: 0.01em;
+      line-height: 1.35;
+    }
+
     .column-map-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -2041,7 +2069,10 @@
             <div class="column-map-grid">
               <!-- Side A Column Mapping -->
               <div class="column-map-card" id="colMapCardA">
-                <div style="font-weight: 700; font-size: 0.8rem; color: var(--slate-title); margin-bottom: 0.65rem;" id="titleSideAMap">Side A: QuickBooks Columns</div>
+                <div class="column-map-card-header">
+                  <div class="column-map-card-title" id="titleSideAMap">Side A: QuickBooks Columns</div>
+                  <span class="column-map-source-badge" id="badgeSideA" style="display: none;"></span>
+                </div>
                 <div style="display: grid; gap: 0.65rem;">
                   <div class="config-item">
                     <label>Reference / Voucher Column</label>
@@ -2074,7 +2105,10 @@
 
               <!-- Side B Column Mapping -->
               <div class="column-map-card" id="colMapCardB">
-                <div style="font-weight: 700; font-size: 0.8rem; color: var(--slate-title); margin-bottom: 0.65rem;" id="titleSideBMap">Side B: Counterpart Columns</div>
+                <div class="column-map-card-header">
+                  <div class="column-map-card-title" id="titleSideBMap">Side B: Counterpart Columns</div>
+                  <span class="column-map-source-badge" id="badgeSideB" style="display: none;"></span>
+                </div>
                 <div style="display: grid; gap: 0.65rem;">
                   <div class="config-item">
                     <label>Reference / Voucher Column</label>
@@ -3786,16 +3820,36 @@
 
     function populateColumnOptions(side, colOptions, autoDetectedRoles = {}) {
       const prefix = side === 'sideB' ? 'mapSideB' : 'mapSideA';
+      const isPdf = side === 'sideB' ? (typeof wipPdfResult !== 'undefined' && !!wipPdfResult) : (typeof qbPdfResult !== 'undefined' && !!qbPdfResult);
+
+      // Update badge in card header
+      const badgeId = side === 'sideB' ? 'badgeSideB' : 'badgeSideA';
+      const badgeEl = document.getElementById(badgeId);
+      if (badgeEl) {
+        if (colOptions && colOptions.length > 0) {
+          badgeEl.textContent = isPdf ? `📄 PDF (${colOptions.length} cols)` : `📊 Sheet (${colOptions.length} cols)`;
+          if (badgeEl.style) badgeEl.style.display = 'inline-flex';
+        } else {
+          if (badgeEl.style) badgeEl.style.display = 'none';
+        }
+      }
+
+      const hasDrCr = autoDetectedRoles.Dr !== undefined && autoDetectedRoles.Dr >= 0 &&
+                      autoDetectedRoles.Cr !== undefined && autoDetectedRoles.Cr >= 0;
+      const hasAmt = autoDetectedRoles.Amt !== undefined && autoDetectedRoles.Amt >= 0 &&
+                     (!hasDrCr || (autoDetectedRoles.Amt !== autoDetectedRoles.Dr && autoDetectedRoles.Amt !== autoDetectedRoles.Cr));
+
       ['Ref', 'Amt', 'Dr', 'Cr', 'Date', 'Desc'].forEach(type => {
         const sel = document.getElementById(`${prefix}${type}`);
         if (!sel) return;
         const currentVal = sel.value;
         const autoIdx = autoDetectedRoles[type];
         let autoLabel = 'Auto-Detect';
-        if (type === 'Amt' && autoDetectedRoles.Dr !== undefined && autoDetectedRoles.Dr >= 0 &&
-            autoDetectedRoles.Cr !== undefined && autoDetectedRoles.Cr >= 0 &&
+        if (type === 'Amt' && hasDrCr &&
             (autoIdx === undefined || autoIdx < 0 || autoIdx === autoDetectedRoles.Dr || autoIdx === autoDetectedRoles.Cr)) {
           autoLabel = 'Auto-Detect (Using Debit & Credit)';
+        } else if ((type === 'Dr' || type === 'Cr') && hasAmt && (autoIdx === undefined || autoIdx < 0)) {
+          autoLabel = 'Auto-Detect (Using Net Amount)';
         } else if (autoIdx !== undefined && autoIdx >= 0 && colOptions[autoIdx]) {
           autoLabel = `Auto-Detect (${colOptions[autoIdx].label})`;
         }
@@ -4290,11 +4344,11 @@
 
       const colMapCardA = document.getElementById('colMapCardA');
       if (colMapCardA) {
-        // Clear any old "auto-extracted" dimming
+        // Clear any old dimming and badges
         colMapCardA.style.opacity = '';
         colMapCardA.style.pointerEvents = '';
-        const oldBadgeA = colMapCardA.querySelector('.pdf-only-badge');
-        if (oldBadgeA) oldBadgeA.remove();
+        const oldBadgesA = colMapCardA.querySelectorAll('.pdf-only-badge, .pdf-spatial-badge');
+        oldBadgesA.forEach(b => b.remove());
 
         if (sideAIsPdf && qbPdfResult && qbPdfResult.colHeaders && qbPdfResult.colHeaders.length > 0) {
           const autoRolesA = {
@@ -4306,16 +4360,6 @@
             Desc: qbPdfResult.autoColDesc
           };
           populateColumnOptions('sideA', qbPdfResult.colHeaders, autoRolesA);
-          if (!colMapCardA.querySelector('.pdf-spatial-badge')) {
-            const badge = document.createElement('div');
-            badge.className = 'pdf-spatial-badge';
-            badge.style.cssText = 'font-size:0.72rem;color:var(--sage-600);background:var(--sage-50);border:1px solid var(--sage-200);border-radius:6px;padding:0.3rem 0.6rem;margin-top:0.5rem;';
-            badge.textContent = `📄 PDF detected ${qbPdfResult.colHeaders.length} columns — select the right ones below`;
-            colMapCardA.prepend(badge);
-          }
-        } else if (!sideAIsPdf) {
-          const oldSpatialBadge = colMapCardA.querySelector('.pdf-spatial-badge');
-          if (oldSpatialBadge) oldSpatialBadge.remove();
         }
       }
 
@@ -4323,8 +4367,8 @@
       if (colMapCardB) {
         colMapCardB.style.opacity = '';
         colMapCardB.style.pointerEvents = '';
-        const oldBadgeB = colMapCardB.querySelector('.pdf-only-badge');
-        if (oldBadgeB) oldBadgeB.remove();
+        const oldBadgesB = colMapCardB.querySelectorAll('.pdf-only-badge, .pdf-spatial-badge');
+        oldBadgesB.forEach(b => b.remove());
 
         if (sideBIsPdf && wipPdfResult && wipPdfResult.colHeaders && wipPdfResult.colHeaders.length > 0) {
           const autoRolesB = {
@@ -4336,16 +4380,6 @@
             Desc: wipPdfResult.autoColDesc
           };
           populateColumnOptions('sideB', wipPdfResult.colHeaders, autoRolesB);
-          if (!colMapCardB.querySelector('.pdf-spatial-badge')) {
-            const badge = document.createElement('div');
-            badge.className = 'pdf-spatial-badge';
-            badge.style.cssText = 'font-size:0.72rem;color:var(--sage-600);background:var(--sage-50);border:1px solid var(--sage-200);border-radius:6px;padding:0.3rem 0.6rem;margin-top:0.5rem;';
-            badge.textContent = `📄 PDF detected ${wipPdfResult.colHeaders.length} columns — select the right ones below`;
-            colMapCardB.prepend(badge);
-          }
-        } else if (!sideBIsPdf) {
-          const oldSpatialBadge = colMapCardB.querySelector('.pdf-spatial-badge');
-          if (oldSpatialBadge) oldSpatialBadge.remove();
         }
       }
     }
