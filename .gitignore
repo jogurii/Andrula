@@ -1,0 +1,48 @@
+# Dependencies & Package Managers
+node_modules/
+**/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+**/package-lock.json
+
+# Ad-hoc Scratch Scripts & Temporary Analysis
+scratch/analyze_*.js
+scratch/check_*.js
+scratch/inspect_*.js
+scratch/sim_*.js
+scratch/test_live_index.js
+scratch/test_pdf_extraction.js
+scratch/test_qb_match.js
+scratch/test_row_*.js
+scratch/test_thresholds.js
+scratch/package*.json
+scratch/*.tmp
+scratch/*.pdf
+scratch/*.xlsx
+scratch/*.csv
+
+# Operating System Files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+desktop.ini
+
+# IDE & Editor Configurations
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.bak
+
+# Logs & Temporary Files
+*.log
+*.tmp
+*.temp
+
+# Local Excel Test Exports
+Andrula_*.xlsx
+Reconciliation_*.xlsx
+*.crdownload

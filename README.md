@@ -2,6 +2,8 @@
 
 A modular, browser-based financial and ledger reconciliation engine for accountants, designed to reconcile QuickBooks exports, WIP subledgers, vendor statements, and custom accounting schedules.
 
+Processes spreadsheets and PDF statements entirely inside your web browser. No files, ledger balances, or financial details are ever uploaded to a server or transmitted over the internet.
+
 ---
 
 ## Features
@@ -14,7 +16,9 @@ A modular, browser-based financial and ledger reconciliation engine for accounta
   - Dropzone titles, descriptions, column mappers, and table headers dynamically adapt to the active accounting recipe (e.g. *Supplier SOA vs AP*, *Bank Rec*, *QuickBooks vs WIP*).
 - **Automatic Detection with Manual Control**:
   - Automatically identifies common sheet names (`QuickBooks`, `QB`, `WIP`, `Ledger`) and columns (`No.`, `Ref No`, `Amount`, `Date`, `Memo/Description`).
-  - Optional settings panel to manually choose sheets or customize variance tolerance.
+  - Transparent auto-detection indicators (`Auto-Detect (Col X: Header)`) for both spreadsheets and PDF statements.
+  - Dedicated **Worksheet & Column Setup** card located directly beneath upload dropzones to quickly switch sheets and fine-tune column mappings or select `— None (Do not use) —` to resolve Net vs Debit/Credit column conflicts.
+  - Collapsible **Reconciliation Recipe & Formula Settings** panel focused on business recipe profiles, math formulas ($A - B = 0$, $A + B = 0$, $|A| - |B| = 0$), reference normalizers, and reusable template JSON export/import.
 - **Detailed Discrepancy Breakdown & Audit Triage**:
   - Categorizes records by status: *Amount Mismatch*, *Missing in Primary Ledger*, *Missing in Counterpart Ledger*, or *Line Count Difference*.
   - Persistent **"Mark as Reviewed"** audit tracking with live progress counter (e.g., `12 of 38 Reviewed (32%)`).
@@ -27,7 +31,7 @@ A modular, browser-based financial and ledger reconciliation engine for accounta
 - **Built-In Keyboard Shortcuts**:
   - Full keyboard control for high-speed triage without touching the mouse.
 - **Multi-Currency Support**:
-  - Formats numbers in 14 major currencies: AED, USD, EUR, GBP, SAR, QAR, OMR, BHD, KWD, EGP, INR, SGD, AUD, and CAD.
+  - Formats numbers in 15 major currencies: AED (default for UAE), USD, EUR, GBP, SAR, QAR, OMR, BHD, KWD, EGP, INR, SGD, AUD, CAD, and IDR, with accurate sub-unit precision (3 decimals for OMR, BHD, KWD).
 - **Excel Export**:
   - Download reconciliation results directly into a structured `.xlsx` spreadsheet, including your audit review statuses.
 
@@ -71,7 +75,7 @@ You do not need to install Node.js, databases, or build tools.
 
 1. Download or clone this repository.
 2. Double-click `index.html` to open it in any modern browser (Chrome, Edge, Safari, Firefox).
-3. Drag and drop your spreadsheet(s) into the upload area.
+3. Drag and drop your spreadsheet(s) or PDF statement into the upload area.
 
 ### Optional: Running via Local Server
 
@@ -91,7 +95,7 @@ Then visit `http://localhost:3000`.
 
 ## Expected Spreadsheet Format
 
-Andrula works with standard Excel files (`.xlsx` or `.xls`). The parser looks for the following columns within the first 20 rows of each sheet:
+Andrula works with standard Excel files (`.xlsx` or `.xls`) and CSV files. The parser looks for the following columns within the first 20 rows of each sheet:
 
 | Field | Recognized Header Names |
 | :--- | :--- |
@@ -124,10 +128,13 @@ Andrula includes a **Reconciliation Recipe Engine** that adapts to any accountin
 - **Exact Match**: Strict case-insensitive character comparison.
 
 ### 4. Dynamic Column Mapping & Separate Debit/Credit Overrides
-When spreadsheets are uploaded, candidate columns are automatically extracted and populated into dropdowns for:
+When spreadsheets or PDF statements are uploaded, candidate columns are automatically extracted and populated into dropdowns for:
 - **Side A (Primary Ledger)**: Reference Number, Amount (Net/Signed), Debit (Dr), Credit (Cr), Date, and Description.
 - **Side B (Counterpart Ledger)**: Reference Number, Amount (Net/Signed), Debit (Dr), Credit (Cr), Date, and Description.
+
 Accountants can map single net amount columns or separate Debit/Credit columns ($Amount = Debit - Credit$) without modifying source files.
+
+**PDF Spatial Column Remapping**: When a PDF statement is uploaded, Andrula's visual coordinate detector extracts candidate columns and displays a `📄 PDF detected N columns` badge on the mapping card, enabling you to reassign column roles directly from the interface if needed.
 
 ### 5. Multi-Line ERP Split Reports ("Fill-Down Blank References")
 Detailed ERP reports (e.g. QuickBooks Detailed, SAP, Sage 50/300, Netsuite, MYOB) often print the voucher reference number only on the first split row, leaving subsequent line items with amounts but empty reference cells.
@@ -136,7 +143,7 @@ Detailed ERP reports (e.g. QuickBooks Detailed, SAP, Sage 50/300, Netsuite, MYOB
 
 ### 6. Universal Supplier Statement Ingestion (PDF, Excel, or CSV)
 More than half of vendors provide statements of account in spreadsheet formats rather than PDF.
-- The **Supplier Statement SOA** dropzone accepts `.pdf`, `.xlsx`, `.xls`, and `.csv`.
+- The statement dropzone accepts `.pdf`, `.xlsx`, `.xls`, and `.csv`.
 - If an Excel or CSV file is uploaded, Andrula automatically extracts the statement transactions via the spreadsheet parser.
 - For PDF statements, text items are grouped and sorted by **visual Y/X coordinates**, reconstructing true tabular rows even when PDF generators write columns out of visual order.
 
@@ -156,8 +163,39 @@ Inspect any transaction voucher in depth:
 - **1-to-1 Counterpart Pairing**: Each line in the primary ledger is matched and aligned side-by-side with its counterpart on the exact same horizontal row baseline.
 - **Smart Tie-Breaking**: When multiple lines share identical amounts, transactions are intelligently paired by matching dates and memo descriptions before falling back to index sequence.
 - **Dashed Placeholder Rows**: Unpaired or discrepant transactions render an empty placeholder slot on the missing side (`— No counterpart line in [Peer] —`), ensuring the tables never drift vertically.
+- **Discrepancy Marking**: Lines causing variances are highlighted in soft rose with `⚠ Discrepant` badges, while exact pairs are tagged `✓ Matched`.
 - **3-Way View Order Switcher**: Toggle instantly between **`Discrepancies First`** (pins problem lines causing the variance right at the top), **`By Amount`** (ordered largest to smallest value), and **`File Order`** (original spreadsheet order).
 - **Synchronized Hover**: Hovering over any line highlights both counterpart rows simultaneously across ledgers.
+
+---
+
+## Project Structure & Development
+
+```text
+Andrula/
+├── index.html              # Core single-page application (HTML, CSS, JS)
+├── README.md               # Documentation and operator guide
+├── .gitignore              # Git ignore rules for node_modules, temp files, and test exports
+├── docs/                   # Architectural plans and specifications
+│   └── superpowers/
+│       ├── plans/          # Implementation plans
+│       └── specs/          # Design specifications
+└── scratch/                # Unit test suites and verification scripts
+    ├── test_universal_mode.js
+    └── test_pair_drilldown_lines.js
+```
+
+### Running Automated Tests
+
+You can run the included test suites using Node.js:
+
+```bash
+# Test universal 2-option mode & file format ingestion
+node scratch/test_universal_mode.js
+
+# Test side-by-side paired drill-down algorithm
+node scratch/test_pair_drilldown_lines.js
+```
 
 ---
 

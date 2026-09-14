@@ -351,6 +351,97 @@
       letter-spacing: 0.02em;
     }
 
+    /* Ingestion Setup Card: Worksheet & Column Mapping */
+    .ingestion-setup-card {
+      background: var(--surface-white);
+      border: 1px solid var(--blossom-200);
+      border-radius: 16px;
+      padding: 1.25rem 1.45rem;
+      margin-top: 1.25rem;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.025);
+      animation: fadeIn 0.25s ease;
+    }
+
+    .ingestion-setup-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+      padding-bottom: 0.85rem;
+      border-bottom: 1px solid var(--blossom-100);
+    }
+
+    .ingestion-setup-title-group {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+    }
+
+    .ingestion-setup-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      background: var(--blossom-50);
+      border: 1px solid var(--blossom-200);
+      color: var(--blossom-600);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .ingestion-setup-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--slate-title);
+      margin: 0;
+      line-height: 1.25;
+    }
+
+    .ingestion-setup-desc {
+      font-size: 0.76rem;
+      color: var(--slate-muted);
+      margin: 0.2rem 0 0 0;
+    }
+
+    .btn-toggle-colmap {
+      background: var(--blossom-50);
+      border: 1px solid var(--blossom-200);
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--blossom-700);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.42rem 0.85rem;
+      border-radius: var(--radius-pill);
+      transition: all 0.2s ease;
+      font-family: inherit;
+    }
+
+    .btn-toggle-colmap:hover {
+      background: var(--blossom-100);
+      border-color: var(--blossom-300);
+      transform: translateY(-1px);
+    }
+
+    .btn-toggle-colmap.active {
+      background: var(--blossom-600);
+      color: white;
+      border-color: var(--blossom-600);
+    }
+
+    .btn-toggle-colmap.active svg {
+      transform: rotate(180deg);
+    }
+
+    .btn-toggle-colmap svg {
+      transition: transform 0.2s ease;
+    }
+
     .config-panel {
       display: none;
       background: var(--surface-white);
@@ -1336,6 +1427,7 @@
     .modal-body {
       padding: 1.5rem 1.75rem;
       overflow-y: auto;
+      overflow-x: hidden;
     }
 
     /* Modal Summary & Highlight Banner */
@@ -1488,7 +1580,7 @@
     .drilldown-table-wrap {
       max-height: 380px;
       overflow-y: auto;
-      overflow-x: auto;
+      overflow-x: hidden;
       scrollbar-width: thin;
       scrollbar-color: var(--blossom-200) var(--blossom-50);
     }
@@ -1784,9 +1876,17 @@
             <option value="USD">USD ($)</option>
             <option value="EUR">EUR (€)</option>
             <option value="GBP">GBP (£)</option>
-            <option value="IDR">IDR (Rp)</option>
+            <option value="SAR">SAR (ر.س)</option>
+            <option value="QAR">QAR (ر.ق)</option>
+            <option value="OMR">OMR (ر.ع.)</option>
+            <option value="BHD">BHD (د.ب)</option>
+            <option value="KWD">KWD (د.ك)</option>
+            <option value="EGP">EGP (ج.م)</option>
+            <option value="INR">INR (₹)</option>
             <option value="SGD">SGD (S$)</option>
             <option value="AUD">AUD (A$)</option>
+            <option value="CAD">CAD (CA$)</option>
+            <option value="IDR">IDR (Rp)</option>
           </select>
         </div>
 
@@ -1883,8 +1983,134 @@
         </div>
       </div>
 
+      <!-- Ingestion Setup: Worksheet Selection & Custom Column Mapping (Visible & Accessible) -->
+      <div class="ingestion-setup-card" id="ingestionSetupCard">
+        <div class="ingestion-setup-header">
+          <div class="ingestion-setup-title-group">
+            <div class="ingestion-setup-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
+                <polyline points="10 9 9 9 8 9"/>
+              </svg>
+            </div>
+            <div>
+              <h3 class="ingestion-setup-title">Worksheet & Column Setup</h3>
+              <p class="ingestion-setup-desc">Configure sheet selection and fine-tune column mappings for uploaded statements and ledgers.</p>
+            </div>
+          </div>
+          <button type="button" id="btnToggleColumnMapping" class="btn-toggle-colmap" title="Toggle manual column mapping">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            <span>Custom Column Mapping</span>
+          </button>
+        </div>
+
+        <!-- Sheet Selection (When Excel Workbooks or PDFs are uploaded) -->
+        <div id="sheetSelectionSection" style="margin-top: 1rem;">
+          <div class="config-grid">
+            <div class="config-item" id="sheetSelectorA">
+              <label id="labelQBSheet">Primary Sheet (Side A)</label>
+              <select id="selectQBSheet">
+                <option value="">Auto-Detect</option>
+              </select>
+              <div id="pdfNoteA" style="display:none; margin-top:0.45rem; padding:0.45rem 0.7rem; background:var(--sage-50); border:1px solid var(--sage-200); border-radius:8px; font-size:0.76rem; color:var(--sage-600); line-height:1.4;">
+                📄 <strong>PDF loaded</strong> — sheet selection not applicable. Extraction is automatic.
+              </div>
+            </div>
+            <div class="config-item" id="sheetSelectorB">
+              <label id="labelWIPSheet">Counterpart Sheet (Side B)</label>
+              <select id="selectWIPSheet">
+                <option value="">Auto-Detect</option>
+              </select>
+              <div id="pdfNoteB" style="display:none; margin-top:0.45rem; padding:0.45rem 0.7rem; background:var(--sage-50); border:1px solid var(--sage-200); border-radius:8px; font-size:0.76rem; color:var(--sage-600); line-height:1.4;">
+                📄 <strong>PDF loaded</strong> — sheet selection not applicable. Extraction is automatic.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Advanced Column Mapping (Expandable) -->
+        <div id="columnMappingSection" style="margin-top: 0.85rem;">
+          <div id="pdfNoteColumnMapping" style="display:none; margin-top:0.5rem; padding:0.45rem 0.7rem; background:var(--sage-50); border:1px solid var(--sage-200); border-radius:8px; font-size:0.76rem; color:var(--sage-600); line-height:1.4;">
+            📄 Column mapping applies to Excel, CSV, and spatial PDF extractions. Select column roles if needed.
+          </div>
+
+          <div id="columnMappingWrap" style="display: none; margin-top: 0.85rem;">
+            <div class="column-map-grid">
+              <!-- Side A Column Mapping -->
+              <div class="column-map-card" id="colMapCardA">
+                <div style="font-weight: 700; font-size: 0.8rem; color: var(--slate-title); margin-bottom: 0.65rem;" id="titleSideAMap">Side A: QuickBooks Columns</div>
+                <div style="display: grid; gap: 0.65rem;">
+                  <div class="config-item">
+                    <label>Reference / Voucher Column</label>
+                    <select id="mapSideARef"><option value="-1">Auto-Detect</option></select>
+                  </div>
+                  <div class="config-item">
+                    <label>Amount Column (Net / Signed)</label>
+                    <select id="mapSideAAmt"><option value="-1">Auto-Detect</option><option value="-2">— None (Do not use) —</option></select>
+                  </div>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem;">
+                    <div class="config-item">
+                      <label>Debit Col (Dr)</label>
+                      <select id="mapSideADr"><option value="-1">Auto-Detect</option><option value="-2">— None (Do not use) —</option></select>
+                    </div>
+                    <div class="config-item">
+                      <label>Credit Col (Cr)</label>
+                      <select id="mapSideACr"><option value="-1">Auto-Detect</option><option value="-2">— None (Do not use) —</option></select>
+                    </div>
+                  </div>
+                  <div class="config-item">
+                    <label>Date Column (Optional)</label>
+                    <select id="mapSideADate"><option value="-1">Auto-Detect</option><option value="-2">— None (Do not use) —</option></select>
+                  </div>
+                  <div class="config-item">
+                    <label>Description Column (Optional)</label>
+                    <select id="mapSideADesc"><option value="-1">Auto-Detect</option><option value="-2">— None (Do not use) —</option></select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Side B Column Mapping -->
+              <div class="column-map-card" id="colMapCardB">
+                <div style="font-weight: 700; font-size: 0.8rem; color: var(--slate-title); margin-bottom: 0.65rem;" id="titleSideBMap">Side B: Counterpart Columns</div>
+                <div style="display: grid; gap: 0.65rem;">
+                  <div class="config-item">
+                    <label>Reference / Voucher Column</label>
+                    <select id="mapSideBRef"><option value="-1">Auto-Detect</option></select>
+                  </div>
+                  <div class="config-item">
+                    <label>Amount Column (Net / Signed)</label>
+                    <select id="mapSideBAmt"><option value="-1">Auto-Detect</option><option value="-2">— None (Do not use) —</option></select>
+                  </div>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem;">
+                    <div class="config-item">
+                      <label>Debit Col (Dr)</label>
+                      <select id="mapSideBDr"><option value="-1">Auto-Detect</option><option value="-2">— None (Do not use) —</option></select>
+                    </div>
+                    <div class="config-item">
+                      <label>Credit Col (Cr)</label>
+                      <select id="mapSideBCr"><option value="-1">Auto-Detect</option><option value="-2">— None (Do not use) —</option></select>
+                    </div>
+                  </div>
+                  <div class="config-item">
+                    <label>Date Column (Optional)</label>
+                    <select id="mapSideBDate"><option value="-1">Auto-Detect</option><option value="-2">— None (Do not use) —</option></select>
+                  </div>
+                  <div class="config-item">
+                    <label>Description Column (Optional)</label>
+                    <select id="mapSideBDesc"><option value="-1">Auto-Detect</option><option value="-2">— None (Do not use) —</option></select>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Reconciliation Recipe & Formula Settings Toggle -->
-      <button class="config-toggle" id="toggleConfigBtn" title="Customize reconciliation recipe, formula, and column mappings">
+      <button class="config-toggle" id="toggleConfigBtn" title="Customize reconciliation recipe, formula, and matching rules">
         <div style="display: flex; align-items: center; gap: 0.5rem;">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="3"></circle>
@@ -2007,107 +2233,6 @@
               Fill-down blank references (Multi-line Split ERP Reports: SAP, QuickBooks Detailed, Sage, MYOB)
               <span style="display: block; font-size: 0.72rem; font-weight: 400; color: var(--slate-muted); margin-top: 0.15rem;">Automatically inherits voucher reference and date from the parent row when split lines have amounts but empty reference cells.</span>
             </label>
-          </div>
-        </div>
-
-        <div class="config-divider"></div>
-
-        <!-- Section 3: Sheet Selection (When Excel Workbooks are uploaded) -->
-        <div class="config-section-title">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-          Sheet Selection
-        </div>
-
-        <div class="config-grid">
-          <div class="config-item">
-            <label id="labelQBSheet">Primary Sheet (Side A)</label>
-            <select id="selectQBSheet">
-              <option value="">Auto-Detect</option>
-            </select>
-          </div>
-          <div class="config-item">
-            <label id="labelWIPSheet">Counterpart Sheet (Side B)</label>
-            <select id="selectWIPSheet">
-              <option value="">Auto-Detect</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- Section 4: Advanced Column Mapping -->
-        <div style="margin-top: 1.25rem;">
-          <button type="button" id="btnToggleColumnMapping" style="background: var(--blossom-50); border: 1px solid var(--blossom-200); font-size: 0.82rem; font-weight: 600; color: var(--blossom-700); cursor: pointer; display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.4rem 0.85rem; border-radius: var(--radius-pill); transition: all 0.2s;">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-            <span>Custom Column Mapping (Optional)</span>
-          </button>
-
-          <div id="columnMappingWrap" style="display: none; margin-top: 0.85rem;">
-            <div class="column-map-grid">
-              <!-- Side A Column Mapping -->
-              <div class="column-map-card">
-                <div style="font-weight: 700; font-size: 0.8rem; color: var(--slate-title); margin-bottom: 0.65rem;" id="titleSideAMap">Side A: QuickBooks Columns</div>
-                <div style="display: grid; gap: 0.65rem;">
-                  <div class="config-item">
-                    <label>Reference / Voucher Column</label>
-                    <select id="mapSideARef"><option value="-1">Auto-Detect</option></select>
-                  </div>
-                  <div class="config-item">
-                    <label>Amount Column (Net / Signed)</label>
-                    <select id="mapSideAAmt"><option value="-1">Auto-Detect</option></select>
-                  </div>
-                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem;">
-                    <div class="config-item">
-                      <label>Debit Col (Dr)</label>
-                      <select id="mapSideADr"><option value="-1">Auto-Detect</option></select>
-                    </div>
-                    <div class="config-item">
-                      <label>Credit Col (Cr)</label>
-                      <select id="mapSideACr"><option value="-1">Auto-Detect</option></select>
-                    </div>
-                  </div>
-                  <div class="config-item">
-                    <label>Date Column (Optional)</label>
-                    <select id="mapSideADate"><option value="-1">Auto-Detect</option></select>
-                  </div>
-                  <div class="config-item">
-                    <label>Description Column (Optional)</label>
-                    <select id="mapSideADesc"><option value="-1">Auto-Detect</option></select>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Side B Column Mapping -->
-              <div class="column-map-card">
-                <div style="font-weight: 700; font-size: 0.8rem; color: var(--slate-title); margin-bottom: 0.65rem;" id="titleSideBMap">Side B: Counterpart Columns</div>
-                <div style="display: grid; gap: 0.65rem;">
-                  <div class="config-item">
-                    <label>Reference / Voucher Column</label>
-                    <select id="mapSideBRef"><option value="-1">Auto-Detect</option></select>
-                  </div>
-                  <div class="config-item">
-                    <label>Amount Column (Net / Signed)</label>
-                    <select id="mapSideBAmt"><option value="-1">Auto-Detect</option></select>
-                  </div>
-                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem;">
-                    <div class="config-item">
-                      <label>Debit Col (Dr)</label>
-                      <select id="mapSideBDr"><option value="-1">Auto-Detect</option></select>
-                    </div>
-                    <div class="config-item">
-                      <label>Credit Col (Cr)</label>
-                      <select id="mapSideBCr"><option value="-1">Auto-Detect</option></select>
-                    </div>
-                  </div>
-                  <div class="config-item">
-                    <label>Date Column (Optional)</label>
-                    <select id="mapSideBDate"><option value="-1">Auto-Detect</option></select>
-                  </div>
-                  <div class="config-item">
-                    <label>Description Column (Optional)</label>
-                    <select id="mapSideBDesc"><option value="-1">Auto-Detect</option></select>
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -2569,6 +2694,12 @@
     </div>
   </div>
 
+  <!-- Toast Notification element -->
+  <div id="toastNotification" class="toast-pill">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+    <span id="toastMessage">Copied reference!</span>
+  </div>
+
   <script>
     // State
     let currentMode = 'dual'; // 'dual' | 'single'
@@ -2581,9 +2712,7 @@
     let wipWorkbook = null;
     let qbPdfResult = null;
     let wipPdfResult = null;
-    let supplierPdfResult = null;
-    let supplierSoaWorkbook = null;
-    let supplierQbWorkbook = null;
+    // supplierPdfResult / supplierSoaWorkbook / supplierQbWorkbook removed — no longer needed after universal mode migration
     let fillDownBlankRefs = false;
     let allDiscrepancies = [];
     let currentFilter = 'all';
@@ -2667,25 +2796,41 @@
       }
     };
 
-    // Currency Formatter
+    // Currency Formatter & Dynamic Decimal Presets
     const currencyConfigs = {
       AED: { code: 'AED', symbol: 'AED ', decimals: 2 },
       USD: { code: 'USD', symbol: '$', decimals: 2 },
       EUR: { code: 'EUR', symbol: '€', decimals: 2 },
       GBP: { code: 'GBP', symbol: '£', decimals: 2 },
-      IDR: { code: 'IDR', symbol: 'Rp ', decimals: 2 },
+      SAR: { code: 'SAR', symbol: 'SAR ', decimals: 2 },
+      QAR: { code: 'QAR', symbol: 'QAR ', decimals: 2 },
+      OMR: { code: 'OMR', symbol: 'OMR ', decimals: 3 },
+      BHD: { code: 'BHD', symbol: 'BHD ', decimals: 3 },
+      KWD: { code: 'KWD', symbol: 'KWD ', decimals: 3 },
+      EGP: { code: 'EGP', symbol: 'EGP ', decimals: 2 },
+      INR: { code: 'INR', symbol: '₹', decimals: 2 },
       SGD: { code: 'SGD', symbol: 'S$', decimals: 2 },
-      AUD: { code: 'AUD', symbol: 'A$', decimals: 2 }
+      AUD: { code: 'AUD', symbol: 'A$', decimals: 2 },
+      CAD: { code: 'CAD', symbol: 'CA$', decimals: 2 },
+      IDR: { code: 'IDR', symbol: 'Rp ', decimals: 2 }
     };
 
+    function getCurrencyDecimals() {
+      const select = document.getElementById('currencySelector');
+      const currKey = select ? select.value : 'AED';
+      const cfg = currencyConfigs[currKey] || currencyConfigs.AED;
+      return typeof cfg.decimals === 'number' ? cfg.decimals : 2;
+    }
+
     function calculateVariance(valA, valB, formulaType = currentFormulaType) {
+      const factor = Math.pow(10, getCurrencyDecimals());
       if (formulaType === 'contra') {
-        return Math.round((valA + valB) * 100) / 100;
+        return Math.round((valA + valB) * factor) / factor;
       }
       if (formulaType === 'abs_diff') {
-        return Math.round((Math.abs(valA) - Math.abs(valB)) * 100) / 100;
+        return Math.round((Math.abs(valA) - Math.abs(valB)) * factor) / factor;
       }
-      return Math.round((valA - valB) * 100) / 100;
+      return Math.round((valA - valB) * factor) / factor;
     }
 
     function normalizeRef(ref, mode = currentRefNormalizer) {
@@ -2743,172 +2888,467 @@
       return s;
     }
 
-    async function parseSupplierPDF(arrayBuffer) {
+    // ─────────────────────────────────────────────────────────────────────────
+    // UNIVERSAL PDF SPATIAL TABLE EXTRACTOR
+    // Works for any supplier ERP format by clustering text X-coordinates into
+    // columns, then applying the same column-mapping logic used for Excel files.
+    // ─────────────────────────────────────────────────────────────────────────
+    // UNIVERSAL SPATIAL PDF STATEMENT EXTRACTOR & VIRTUAL TABLE ENGINE
+    // Supports landscape/rotated PDFs (90°, 270°), multi-page ERP statements
+    // (Realsoft, Tally, SAP, Oracle, QuickBooks), and dynamic custom column mapping.
+    // ─────────────────────────────────────────────────────────────────────────
+    async function parsePDFStatement(arrayBuffer) {
       if (!window.pdfjsLib) {
         throw new Error('PDF.js library is not ready or failed to load. Please check your network connection.');
       }
       const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      const allPageRows = []; // [{ vy, cells: [{ vx, str }], pageNum }]
       let fullText = '';
-      const visualLines = [];
 
       try {
-        for (let i = 1; i <= pdf.numPages; i++) {
-          const page = await pdf.getPage(i);
+        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+          const page = await pdf.getPage(pageNum);
           const content = await page.getTextContent();
           const items = content.items || [];
-          const pageText = items.map(item => item.str).join(' ');
-          fullText += ' ' + pageText;
+          fullText += ' ' + items.map(i => i.str).join(' ');
 
-          // Bucket text items by visual Y coordinate baseline (threshold ~3.5px)
-          const lineBuckets = [];
+          // Step 1: Detect orientation of page from transform matrix
+          // An item transform is [a, b, c, d, e, f]. If |b| > |a|, text is rotated 90° or 270° (landscape)
+          let rot90Count = 0, normCount = 0;
+          for (const item of items) {
+            if (!item.transform || item.transform.length < 6) continue;
+            if (Math.abs(item.transform[1]) > Math.abs(item.transform[0])) rot90Count++;
+            else normCount++;
+          }
+          const isRotated = rot90Count > normCount;
+
+          // Step 2: Map items to visual reading coordinates (vx: left->right, vy: top->down)
+          const processedItems = [];
           for (const item of items) {
             const str = (item.str || '').trim();
             if (!str) continue;
-            const x = item.transform && item.transform.length >= 6 ? item.transform[4] : 0;
-            const y = item.transform && item.transform.length >= 6 ? item.transform[5] : 0;
-
-            let bucket = lineBuckets.find(b => Math.abs(b.y - y) <= 3.5);
-            if (bucket) {
-              bucket.items.push({ str: item.str, x, y });
+            const t = item.transform;
+            let vx, vy;
+            if (isRotated) {
+              // In 90° landscape PDFs (like Realsoft ERP), text advances along +Y (t[5]) and rows advance along +X (t[4])
+              if (t[1] > 0) {
+                vx = t[5];
+                vy = -t[4]; // higher vy is higher on page
+              } else {
+                vx = -t[5];
+                vy = t[4];
+              }
             } else {
-              lineBuckets.push({ y, items: [{ str: item.str, x, y }] });
+              // Standard horizontal orientation
+              if (t[0] >= 0) {
+                vx = t[4];
+                vy = t[5];
+              } else {
+                vx = -t[4];
+                vy = -t[5];
+              }
+            }
+            processedItems.push({ str, vx, vy });
+          }
+
+          // Step 3: Bucket into rows by Y (vy) with 4.0px threshold
+          const pageRows = [];
+          for (const item of processedItems) {
+            let bucket = pageRows.find(r => Math.abs(r.vy - item.vy) <= 4.0);
+            if (bucket) {
+              bucket.cells.push(item);
+            } else {
+              pageRows.push({ vy: item.vy, cells: [item], pageNum });
             }
           }
-
-          // Sort lines top-to-bottom (higher Y coordinate is top of page in PDF)
-          lineBuckets.sort((a, b) => b.y - a.y);
-
-          // Within each line, sort items left-to-right by X coordinate
-          for (const b of lineBuckets) {
-            b.items.sort((a, b) => a.x - b.x);
-            const lineStr = b.items.map(it => it.str).join(' ').replace(/\s+/g, ' ').trim();
-            if (lineStr) visualLines.push(lineStr);
+          pageRows.sort((a, b) => b.vy - a.vy); // top-to-bottom
+          for (const r of pageRows) {
+            r.cells.sort((a, b) => a.vx - b.vx); // left-to-right
           }
+          allPageRows.push(...pageRows);
         }
       } finally {
-        if (pdf && typeof pdf.destroy === 'function') {
-          pdf.destroy();
-        }
+        if (pdf && typeof pdf.destroy === 'function') pdf.destroy();
       }
 
-      if (!fullText.trim() && visualLines.length === 0) {
+      if (!fullText.trim() && allPageRows.length === 0) {
         throw new Error('The uploaded PDF does not contain digital/selectable text. It appears to be a scanned image or photo. Andrula requires a digital PDF statement or an OCR-processed PDF to extract transactions.');
       }
 
-      const map = new Map();
-      let totalAmount = 0;
+      // Step 4: Intelligent Header Detection
+      // A header word contains 2+ letters and is NOT a pure number, amount with Dr/Cr, date, or code
+      function isHeaderWord(str) {
+        const s = (str || '').trim();
+        if (!s) return false;
+        const stripped = s.replace(/[\d,.()+\-\/\s]/g, '').replace(/\b(dr|cr|aed|usd|eur|gbp|idr|sgd)\b/gi, '').trim();
+        return stripped.length >= 2;
+      }
 
-      // Primary Line-by-Line visual parsing across diverse vendor formats
-      const dateRegex = /\b(\d{1,4}[\/.-]\d{1,2}[\/.-]\d{2,4})\b/;
-      const amtRegex = /(?:^|\s)([-+]?(?:\d{1,3}(?:,\d{3})+|\d+)\.\d{2})\s*(Dr|Cr)?(?:\s|$)/i;
+      const headerKeywords = [
+        'invoice', 'inv', 'vchr', 'voucher', 'balance', 'bal', 'adjustment', 'adjustments',
+        'date', 'ref', 'lpo', 'code', 'name', 'type', 'debit', 'credit', 'particulars',
+        'description', 'amount', 'amt', 'total', 'bill', 'no', 'num'
+      ];
 
-      for (const line of visualLines) {
-        const lower = line.toLowerCase();
-        // Skip obvious header/footer lines
-        if (lower.includes('page ') || lower.includes('statement period') || lower.includes('opening balance') ||
-            lower.includes('closing balance') || lower.includes('brought forward') || lower.startsWith('total') ||
-            lower.includes('statement of account') || lower.includes('tax invoice / statement')) {
-          continue;
+      function scoreHeaderRow(row) {
+        const textCells = row.cells.filter(c => isHeaderWord(c.str));
+        if (textCells.length < 2) return -100;
+        let score = 0;
+        const rowText = row.cells.map(c => c.str.toLowerCase()).join(' ');
+        for (const kw of headerKeywords) {
+          if (rowText.includes(kw)) score += 12;
         }
+        score += textCells.length * 6;
+        return score;
+      }
 
-        const dateMatch = line.match(dateRegex);
-        const amtMatch = line.match(amtRegex);
-
-        if (!dateMatch || !amtMatch) continue;
-
-        const dateStr = dateMatch[1];
-        let rawAmtStr = amtMatch[1];
-        const drCrMarker = amtMatch[2] ? amtMatch[2].toUpperCase() : '';
-        let amt = parseFloat(rawAmtStr.replace(/,/g, ''));
-
-        // Determine if credit / return / payment
-        const isCredit = drCrMarker === 'CR' ||
-                         lower.includes('credit note') ||
-                         lower.includes('payment') ||
-                         lower.includes('return') ||
-                         rawAmtStr.startsWith('-');
-
-        if (isCredit) {
-          amt = -Math.abs(amt);
-        }
-
-        // Extract reference code by finding candidate token excluding date and amount
-        let stripped = line.replace(dateMatch[0], ' ')
-                           .replace(amtMatch[0], ' ')
-                           .replace(/\b(credit note|tax invoice|credit sales|invoice|bill|debit note|payment|receipt|vch|inv|pv|rv)\b/gi, ' ')
-                           .replace(/\b(dr|cr|aed|usd|eur|gbp|idr|sgd)\b/gi, ' ')
-                           .trim();
-
-        const tokens = stripped.split(/\s+/).filter(t => t.length >= 2 && !/^[\d,.]+$/.test(t) && !/^[-/]+$/.test(t));
-        // Prefer token matching standard voucher/invoice formats (with numbers or hyphens)
-        let refCandidate = tokens.find(t => /[0-9]/.test(t) && !/^(\d{1,2}[\/.-]\d{1,2})$/.test(t)) || tokens[0];
-
-        if (!refCandidate) {
-          // Fallback check: try pure numeric token of 3+ digits
-          const numTokens = stripped.split(/\s+/).filter(t => /^\d{3,10}$/.test(t));
-          if (numTokens.length > 0) refCandidate = numTokens[0];
-        }
-
-        if (refCandidate) {
-          const refNo = normalizeRef(refCandidate);
-          if (refNo) {
-            amt = Math.round(amt * 100) / 100;
-            totalAmount = Math.round((totalAmount + amt) * 100) / 100;
-
-            if (!map.has(refNo)) {
-              map.set(refNo, { sum: 0, count: 0, rows: [] });
-            }
-            const entry = map.get(refNo);
-            entry.sum = Math.round((entry.sum + amt) * 100) / 100;
-            entry.count += 1;
-            entry.rows.push({
-              date: dateStr,
-              description: line.slice(0, 100),
-              amount: amt
-            });
-          }
+      // Find the best header row across all pages
+      let bestHeaderScore = 0;
+      let bestHeaderRow = null;
+      for (const row of allPageRows) {
+        const s = scoreHeaderRow(row);
+        if (s > bestHeaderScore) {
+          bestHeaderScore = s;
+          bestHeaderRow = row;
         }
       }
 
-      // Secondary stream regex fallback if line-by-line found 0 transactions
-      if (map.size === 0) {
-        const regex = /([A-Za-z0-9]+(?:-[A-Za-z0-9]+)+|[0-9]{2}-[0-9]{4,6})\s+(Credit Sales(?:\s+Return)?|Tax Invoice|Invoice|Bill|Credit Note|Debit Note|Payment)\s+(\d{2}[\/.-]\d{2}[\/.-]\d{4})[\s\S]{0,150}?([\d,]+\.\d{2})\s*(Dr|Cr)?/gi;
-        let match;
-        while ((match = regex.exec(fullText)) !== null) {
-          const refNo = normalizeRef(match[1].trim());
-          const transType = match[2].trim();
-          const dateStr = match[3].trim();
-          let amt = parseFloat(match[4].replace(/,/g, ''));
-          const isCredit = (match[5] && match[5].toUpperCase() === 'CR') ||
-                           transType.toLowerCase().includes('return') ||
-                           transType.toLowerCase().includes('credit note') ||
-                           transType.toLowerCase().includes('payment');
-
-          if (isCredit) amt = -Math.abs(amt);
-          amt = Math.round(amt * 100) / 100;
-          totalAmount = Math.round((totalAmount + amt) * 100) / 100;
-
-          if (!map.has(refNo)) {
-            map.set(refNo, { sum: 0, count: 0, rows: [] });
-          }
-          const entry = map.get(refNo);
-          entry.sum = Math.round((entry.sum + amt) * 100) / 100;
-          entry.count += 1;
-          entry.rows.push({
-            date: dateStr,
-            description: transType,
-            amount: amt
+      // Step 5: Column boundaries discovery (anchor-based with density fallback)
+      let colBands = [];
+      if (bestHeaderRow && bestHeaderRow.cells.length >= 3) {
+        const hCells = bestHeaderRow.cells;
+        for (let i = 0; i < hCells.length; i++) {
+          const cur = hCells[i];
+          const next = hCells[i + 1];
+          const prev = hCells[i - 1];
+          const xLeft = prev ? (prev.vx + cur.vx) / 2 : 0;
+          const xRight = next ? (cur.vx + next.vx) / 2 : 99999;
+          colBands.push({
+            idx: i,
+            name: cur.str.trim(),
+            xCenter: cur.vx,
+            xLeft,
+            xRight
           });
         }
+      } else {
+        // Fallback density clustering
+        const xPositions = [];
+        for (const row of allPageRows) {
+          if (row.cells.length >= 2) {
+            for (const cell of row.cells) xPositions.push(cell.vx);
+          }
+        }
+        xPositions.sort((a, b) => a - b);
+        for (const x of xPositions) {
+          const existing = colBands.find(b => Math.abs(b.xCenter - x) <= 25);
+          if (existing) {
+            existing.xSum = (existing.xSum || existing.xCenter) + x;
+            existing.xCount = (existing.xCount || 1) + 1;
+            existing.xCenter = existing.xSum / existing.xCount;
+          } else {
+            colBands.push({ xCenter: x, xSum: x, xCount: 1 });
+          }
+        }
+        colBands.sort((a, b) => a.xCenter - b.xCenter);
+        colBands.forEach((b, i) => {
+          b.idx = i;
+          b.name = `Column ${i + 1}`;
+          b.xLeft = i === 0 ? 0 : (colBands[i - 1].xCenter + b.xCenter) / 2;
+          b.xRight = i === colBands.length - 1 ? 99999 : (b.xCenter + colBands[i + 1].xCenter) / 2;
+        });
       }
 
-      // Clean float rounding
-      for (const entry of map.values()) {
-        entry.sum = Math.round(entry.sum * 100) / 100;
+      function assignCellToCol(cellX) {
+        for (let i = 0; i < colBands.length; i++) {
+          if (cellX >= colBands[i].xLeft && cellX < colBands[i].xRight) return i;
+        }
+        let best = 0, bestDist = Infinity;
+        for (let i = 0; i < colBands.length; i++) {
+          const d = Math.abs(colBands[i].xCenter - cellX);
+          if (d < bestDist) { bestDist = d; best = i; }
+        }
+        return best;
       }
-      totalAmount = Math.round(totalAmount * 100) / 100;
 
-      return { map, totalAmount, totalLines: map.size };
+      // Step 6: Build colHeaders for the custom column mapping dropdowns
+      const colHeaders = colBands.map((band, idx) => ({
+        idx,
+        label: `Col ${String.fromCharCode(65 + (idx % 26))}: ${band.name}`
+      }));
+
+      // Step 7: Auto-detect column roles
+      let autoColRef = -1, autoColAmt = -1, autoColDebit = -1, autoColCredit = -1;
+      let autoColDate = -1, autoColDesc = -1;
+      let highestRefPri = 0, highestAmtPri = 0, highestDescPri = 0;
+
+      for (let ci = 0; ci < colBands.length; ci++) {
+        const h = colBands[ci].name.toLowerCase().trim()
+          .replace(/\s*\([^)]*\)/g, '').replace(/[.:#]/g, '').trim();
+
+        if (['vchr no','vch no','voucher no','voucher','invoice no','inv no','bill no','doc no','ref no','reference no','reference','ref','num','no','lpo'].includes(h)) {
+          const p = h === 'vchr no' || h === 'voucher no' || h === 'invoice no' || h === 'ref no' ? 4
+                  : h === 'ref' || h === 'reference' || h === 'num' ? 3 : 2;
+          if (p > highestRefPri) { autoColRef = ci; highestRefPri = p; }
+        }
+        if (['invoice','amount','net amount','amt','nominal','debit amount','invoice amount'].includes(h)) {
+          const p = h === 'invoice' || h === 'amount' || h === 'net amount' ? 4 : 2;
+          if (p > highestAmtPri) { autoColAmt = ci; highestAmtPri = p; }
+        }
+        if (['debit','dr','charges','invoice','sales','billing'].includes(h)) {
+          if (autoColDebit === -1 || h !== 'invoice') autoColDebit = ci;
+        }
+        if (['credit','cr','adjustment','adjustments','return','returns','payment','receipt'].includes(h)) {
+          autoColCredit = ci;
+        }
+        if (['date','tanggal','trans date','tx date','posting date','ref date'].includes(h)) autoColDate = ci;
+        if (['description','desc','particulars','memo','narration','details'].includes(h)) {
+          if (highestDescPri < 4) { autoColDesc = ci; highestDescPri = 4; }
+        } else if (['lpo','lpo no','po no','order no','order'].includes(h)) {
+          if (highestDescPri < 3) { autoColDesc = ci; highestDescPri = 3; }
+        } else if (['type','transaction type','trans type'].includes(h)) {
+          if (highestDescPri < 2) { autoColDesc = ci; highestDescPri = 2; }
+        }
+      }
+
+      // If both Debit and Credit are identified, clear autoColAmt if it was assigned to Debit or Credit
+      if (autoColDebit !== -1 && autoColCredit !== -1) {
+        if (autoColAmt === autoColDebit || autoColAmt === autoColCredit) {
+          autoColAmt = -1;
+        }
+      }
+
+      // Step 8: Construct raw grid rows
+      const rawGridRows = [];
+      for (const row of allPageRows) {
+        if (scoreHeaderRow(row) >= 40) continue; // skip repeated header rows on pages 2-5
+        const gridRow = new Array(colBands.length).fill('');
+        for (const cell of row.cells) {
+          const ci = assignCellToCol(cell.vx);
+          gridRow[ci] = gridRow[ci] ? gridRow[ci] + ' ' + cell.str : cell.str;
+        }
+        if (gridRow.every(c => !c.trim())) continue;
+        rawGridRows.push({ vy: row.vy, pageNum: row.pageNum, cols: gridRow });
+      }
+
+      // Smart Multi-line Row Assembly:
+      // In ERP/accounting PDFs (e.g. Realsoft, Tally, SAP), wrapped cells (e.g. long descriptions or LPOs)
+      // cause text baselines to stagger across columns. The PDF generator might place the amount on Line 1,
+      // the voucher number and date on Line 2 (vertically centered), and description continuation on Line 3.
+      // We fuse adjacent sub-rows belonging to the same transaction row (gap <= 11.5px) while ensuring we
+      // never accidentally merge two distinct voucher numbers or two distinct amounts.
+      const mergedGridRows = [];
+      for (let i = 0; i < rawGridRows.length; i++) {
+        const cur = rawGridRows[i];
+        if (mergedGridRows.length === 0) {
+          mergedGridRows.push(cur);
+          continue;
+        }
+        const prev = mergedGridRows[mergedGridRows.length - 1];
+        const samePage = prev.pageNum === cur.pageNum;
+        const gap = prev.vy - cur.vy; // prev is higher on page (larger vy)
+
+        const prevRef = autoColRef >= 0 ? (prev.cols[autoColRef] || '').trim() : '';
+        const curRef  = autoColRef >= 0 ? (cur.cols[autoColRef] || '').trim()  : '';
+
+        const hasPrevAmt = (autoColDebit >= 0 && cleanNumberPDF(prev.cols[autoColDebit]) !== 0) ||
+                           (autoColCredit >= 0 && cleanNumberPDF(prev.cols[autoColCredit]) !== 0) ||
+                           (autoColAmt >= 0 && cleanNumberPDF(prev.cols[autoColAmt]) !== 0);
+
+        const hasCurAmt  = (autoColDebit >= 0 && cleanNumberPDF(cur.cols[autoColDebit]) !== 0) ||
+                           (autoColCredit >= 0 && cleanNumberPDF(cur.cols[autoColCredit]) !== 0) ||
+                           (autoColAmt >= 0 && cleanNumberPDF(cur.cols[autoColAmt]) !== 0);
+
+        const bothHaveRef = prevRef && curRef && prevRef !== curRef;
+        const bothHaveAmt = hasPrevAmt && hasCurAmt;
+
+        if (samePage && gap > 0 && gap <= 11.5 && !bothHaveRef && !bothHaveAmt) {
+          for (let c = 0; c < colBands.length; c++) {
+            const prevCell = (prev.cols[c] || '').trim();
+            const curCell  = (cur.cols[c] || '').trim();
+            if (!prevCell) {
+              prev.cols[c] = cur.cols[c];
+            } else if (curCell) {
+              // Concatenate text columns (Description, LPO, Particulars, Memo)
+              if (c === autoColDesc || (c !== autoColRef && c !== autoColDebit && c !== autoColCredit && c !== autoColAmt && c !== autoColDate)) {
+                prev.cols[c] = (prevCell + ' ' + curCell).trim();
+              }
+            }
+          }
+          prev.vy = cur.vy;
+        } else {
+          mergedGridRows.push(cur);
+        }
+      }
+
+      // Step 9: Assemble final virtualTable
+      const virtualTable = [];
+      const hRowArr = new Array(colBands.length).fill('');
+      colBands.forEach(b => { hRowArr[b.idx] = b.name; });
+      virtualTable.push(hRowArr);
+      const headerRowIdx = 0;
+      mergedGridRows.forEach(r => virtualTable.push(r.cols));
+
+      // Step 10: Auto-extract default transactions
+      const map = new Map();
+      let totalAmount = 0, totalLines = 0;
+      let lastRef = '', lastDate = '';
+
+      for (let ri = 1; ri < virtualTable.length; ri++) {
+        const row = virtualTable[ri];
+        const fullRowStr = row.join(' ').toLowerCase();
+        if (['page ', 'statement of account', 'total', 'grand total', 'opening balance',
+             'closing balance', 'brought forward', 'balance b/f'].some(k => fullRowStr.includes(k))) continue;
+
+        let refVal = autoColRef >= 0 ? (row[autoColRef] || '').trim() : '';
+        const dateVal = autoColDate >= 0 ? (row[autoColDate] || '').trim() : '';
+        const descVal = autoColDesc >= 0 ? (row[autoColDesc] || '').trim() : '';
+
+        let amt = 0;
+        if (autoColDebit !== -1 && autoColCredit !== -1) {
+          const dr = Math.abs(cleanNumberPDF(row[autoColDebit] || ''));
+          const cr = Math.abs(cleanNumberPDF(row[autoColCredit] || ''));
+          if (dr === 0 && cr === 0 && !refVal) continue;
+          amt = dr > 0 ? (cr > 0 ? dr - cr : dr) : -cr;
+        } else if (autoColAmt !== -1) {
+          const raw = (row[autoColAmt] || '').trim();
+          if (!raw) continue;
+          amt = cleanNumberPDF(raw);
+        } else continue;
+
+        if (!refVal && lastRef) refVal = lastRef;
+        if (refVal) { lastRef = refVal; if (dateVal) lastDate = dateVal; }
+        if (!refVal) continue;
+
+        const refNo = normalizeRef(refVal, currentRefNormalizer);
+        if (!refNo) continue;
+
+        amt = Math.round(amt * 100) / 100;
+        totalAmount = Math.round((totalAmount + amt) * 100) / 100;
+        totalLines++;
+        if (!map.has(refNo)) map.set(refNo, { sum: 0, count: 0, rows: [] });
+        const entry = map.get(refNo);
+        entry.sum = Math.round((entry.sum + amt) * 100) / 100;
+        entry.count += 1;
+        entry.rows.push({ date: dateVal || lastDate || '-', description: descVal || 'No description', amount: amt });
+      }
+
+      const factor = Math.pow(10, getCurrencyDecimals());
+      for (const entry of map.values()) entry.sum = Math.round(entry.sum * factor) / factor;
+      totalAmount = Math.round(totalAmount * factor) / factor;
+
+      return {
+        map, totalAmount, totalLines, virtualTable, colHeaders, headerRowIdx,
+        autoColRef, autoColAmt, autoColDebit, autoColCredit, autoColDate, autoColDesc
+      };
+    }
+
+    // Parse amount from a PDF cell string, respecting Dr/Cr suffixes, parentheses, and European/US separators
+    function cleanNumberPDF(val) {
+      return cleanNumber(val);
+    }
+
+    // Re-process a stored PDF result using manual columnMapping overrides.
+    // Called by runReconciliationIfReady when a PDF is loaded and the user has
+    // configured Custom Column Mapping.
+    function parsePDFVirtualTable(pdfResult, isSideB) {
+      const {
+        virtualTable, headerRowIdx, colHeaders,
+        autoColRef, autoColAmt, autoColDebit, autoColCredit, autoColDate, autoColDesc
+      } = pdfResult;
+
+      if (!virtualTable || virtualTable.length === 0) {
+        return { map: pdfResult.map, totalAmount: pdfResult.totalAmount, totalLines: pdfResult.totalLines };
+      }
+
+      // Active manual overrides from columnMapping
+      const manualRef  = isSideB ? columnMapping.sideBRef  : columnMapping.sideARef;
+      const manualAmt  = isSideB ? columnMapping.sideBAmt  : columnMapping.sideAAmt;
+      const manualDr   = isSideB ? columnMapping.sideBDr   : columnMapping.sideADr;
+      const manualCr   = isSideB ? columnMapping.sideBCr   : columnMapping.sideACr;
+      const manualDate = isSideB ? columnMapping.sideBDate  : columnMapping.sideADate;
+      const manualDesc = isSideB ? columnMapping.sideBDesc  : columnMapping.sideADesc;
+
+      const anyOverride = [manualRef, manualAmt, manualDr, manualCr, manualDate, manualDesc].some(v => v !== undefined && v !== -1);
+      if (!anyOverride) {
+        return { map: pdfResult.map, totalAmount: pdfResult.totalAmount, totalLines: pdfResult.totalLines };
+      }
+
+      // Fallback to auto-detected columns for Auto-Detect (-1), or disable (-1) if explicitly None (-2)
+      const colRef  = (manualRef  !== undefined && manualRef  >= 0) ? manualRef  : (manualRef === -2 ? -1 : autoColRef);
+      const colAmt  = (manualAmt  !== undefined && manualAmt  >= 0) ? manualAmt  : (manualAmt === -2 ? -1 : autoColAmt);
+      const colDr   = (manualDr   !== undefined && manualDr   >= 0) ? manualDr   : (manualDr === -2 ? -1 : autoColDebit);
+      const colCr   = (manualCr   !== undefined && manualCr   >= 0) ? manualCr   : (manualCr === -2 ? -1 : autoColCredit);
+      const colDate = (manualDate !== undefined && manualDate >= 0) ? manualDate : (manualDate === -2 ? -1 : autoColDate);
+      const colDesc = (manualDesc !== undefined && manualDesc >= 0) ? manualDesc : (manualDesc === -2 ? -1 : autoColDesc);
+
+      const startRow = headerRowIdx >= 0 ? headerRowIdx + 1 : 1;
+      const map = new Map();
+      let totalAmount = 0, totalLines = 0;
+      let lastRef = '', lastDate = '';
+
+      for (let ri = startRow; ri < virtualTable.length; ri++) {
+        const row = virtualTable[ri];
+        const fullRowStr = (row || []).join(' ').toLowerCase();
+
+        // Skip summary/header/footer rows
+        if (['page ', 'statement of account', 'statement period', 'total', 'grand total',
+             'opening balance', 'closing balance', 'brought forward', 'balance b/f',
+             'powered by', 'user:'].some(k => fullRowStr.includes(k))) continue;
+        if (row.some(c => c.toLowerCase().trim() === 'total' || c.toLowerCase().trim() === 'grand total')) continue;
+
+        let refVal  = colRef  >= 0 ? (row[colRef]  || '').trim() : '';
+        const dateVal = colDate >= 0 ? (row[colDate] || '').trim() : '';
+        const descVal = colDesc >= 0 ? (row[colDesc] || '').trim() : '';
+
+        let amt = 0;
+        const hasDrCr = colDr >= 0 && colCr >= 0;
+        if (hasDrCr && (manualAmt === -2 || colAmt < 0 || colAmt === colDr || colAmt === colCr || (manualDr !== -2 && manualCr !== -2))) {
+          const dr = Math.abs(cleanNumberPDF(row[colDr] || ''));
+          const cr = Math.abs(cleanNumberPDF(row[colCr] || ''));
+          if (dr === 0 && cr === 0 && !refVal) continue;
+          amt = dr > 0 ? (cr > 0 ? dr - cr : dr) : -cr;
+        } else if (colAmt >= 0) {
+          const raw = (row[colAmt] || '').trim();
+          if (!raw) continue;
+          amt = cleanNumberPDF(raw);
+        } else if (colDr >= 0 && colCr < 0 && (colAmt < 0 || manualAmt === -2)) {
+          const dr = Math.abs(cleanNumberPDF(row[colDr] || ''));
+          if (dr === 0 && !refVal) continue;
+          amt = dr;
+        } else if (colCr >= 0 && colDr < 0 && (colAmt < 0 || manualAmt === -2)) {
+          const cr = Math.abs(cleanNumberPDF(row[colCr] || ''));
+          if (cr === 0 && !refVal) continue;
+          amt = -cr;
+        } else continue;
+
+        if (isNaN(amt)) continue;
+
+        // Fill-down blank reference
+        if (!refVal && lastRef) refVal = lastRef;
+        if (refVal) { lastRef = refVal; if (dateVal) lastDate = dateVal; }
+        if (!refVal) continue;
+
+        const refNo = normalizeRef(refVal, currentRefNormalizer);
+        if (!refNo) continue;
+
+        const factor = Math.pow(10, getCurrencyDecimals());
+        amt = Math.round(amt * factor) / factor;
+        totalAmount = Math.round((totalAmount + amt) * factor) / factor;
+        totalLines++;
+
+        if (!map.has(refNo)) map.set(refNo, { sum: 0, count: 0, rows: [] });
+        const entry = map.get(refNo);
+        entry.sum = Math.round((entry.sum + amt) * factor) / factor;
+        entry.count += 1;
+        entry.rows.push({
+          date: dateVal || lastDate || '-',
+          description: descVal || 'No description provided',
+          amount: amt
+        });
+      }
+
+      return { map, totalAmount, totalLines };
     }
 
     function getSelectedCurrency() {
@@ -3068,7 +3508,7 @@
           const arrayBuffer = await file.arrayBuffer();
 
           if (isPdf) {
-            const result = await parseSupplierPDF(arrayBuffer);
+            const result = await parsePDFStatement(arrayBuffer);
             if (isSideA) {
               qbPdfResult = result;
               qbWorkbook = null;
@@ -3077,7 +3517,9 @@
               wipWorkbook = null;
             }
             if (nameEl) {
-              nameEl.innerText = `${file.name} (${result.totalLines} lines found)`;
+              const colCount = result.colHeaders ? result.colHeaders.length : 0;
+              const colInfo = colCount > 0 ? `, ${colCount} columns` : '';
+              nameEl.innerText = `${file.name} (${result.totalLines} transactions${colInfo})`;
             }
           } else {
             const data = new Uint8Array(arrayBuffer);
@@ -3094,7 +3536,7 @@
             }
           }
 
-          reviewedRefs.clear();
+          clearReviewedRefsStorage();
           populateSheetDropdowns();
           runReconciliationIfReady();
         } catch (err) {
@@ -3113,7 +3555,7 @@
       document.getElementById('singleFileName'),
       (wb) => {
         singleWorkbook = wb;
-        reviewedRefs.clear();
+        clearReviewedRefsStorage();
         populateSheetDropdowns();
         runReconciliationIfReady();
       }
@@ -3148,6 +3590,7 @@
       btnToggleColumnMapping.addEventListener('click', () => {
         const isHidden = columnMappingWrap.style.display === 'none' || !columnMappingWrap.style.display;
         columnMappingWrap.style.display = isHidden ? 'block' : 'none';
+        btnToggleColumnMapping.classList.toggle('active', isHidden);
       });
     }
 
@@ -3237,10 +3680,12 @@
       selectTolerance.addEventListener('change', (e) => {
         if (e.target.value === 'custom') {
           if (customToleranceWrap) customToleranceWrap.style.display = 'block';
-          currentTolerance = parseFloat(inputCustomTolerance?.value) || 0.01;
+          const cv = parseFloat(inputCustomTolerance?.value);
+          currentTolerance = isNaN(cv) ? 0.01 : cv;
         } else {
           if (customToleranceWrap) customToleranceWrap.style.display = 'none';
-          currentTolerance = parseFloat(e.target.value) || 0.01;
+          const sv = parseFloat(e.target.value);
+          currentTolerance = isNaN(sv) ? 0.01 : sv;
         }
         runReconciliationIfReady();
       });
@@ -3248,7 +3693,8 @@
 
     if (inputCustomTolerance) {
       inputCustomTolerance.addEventListener('input', (e) => {
-        currentTolerance = parseFloat(e.target.value) || 0.01;
+        const cv = parseFloat(e.target.value);
+        currentTolerance = isNaN(cv) ? 0.01 : cv;
         runReconciliationIfReady();
       });
     }
@@ -3288,38 +3734,83 @@
       }
     });
 
-    function populateColumnOptions(side, colOptions) {
+    function detectRolesFromRow(row) {
+      const roles = { Ref: -1, Amt: -1, Dr: -1, Cr: -1, Date: -1, Desc: -1 };
+      if (!Array.isArray(row)) return roles;
+
+      for (let j = 0; j < row.length; j++) {
+        const val = String(row[j] || '').toLowerCase().trim();
+        if (!val) continue;
+
+        // Ref / Voucher
+        if (val === 'no.' || val === 'no' || val === 'ref no' || val === 'ref' || val === 'reference' ||
+            val === 'num' || val === 'doc no' || val === 'doc num' || val === 'document' || val === 'invoice no' ||
+            val === 'inv no' || val === 'trans no' || val === 'transaction' || val === 'voucher' || val === 'vchr no') {
+          if (roles.Ref === -1 || val === 'no.' || val === 'ref no' || val === 'num') roles.Ref = j;
+        }
+
+        // Amount (Net / Signed)
+        if (val === 'amount' || val === 'amt' || val === 'nominal' || val === 'net amount' || val === 'total' ||
+            val === 'net' || val === 'balance' || val === 'bal') {
+          if (roles.Amt === -1 || val === 'amount' || val === 'net amount') roles.Amt = j;
+        }
+
+        // Debit
+        if (val === 'debit' || val === 'dr' || val === 'debet' || val === 'dr amount' || val === 'debit amount') {
+          roles.Dr = j;
+        }
+
+        // Credit
+        if (val === 'credit' || val === 'cr' || val === 'kredit' || val === 'cr amount' || val === 'credit amount') {
+          roles.Cr = j;
+        }
+
+        // Date
+        if (val === 'date' || val === 'tanggal' || val === 'trans date' || val === 'doc date' || val === 'txn date' || val === 'invoice date') {
+          roles.Date = j;
+        }
+
+        // Memo / Description
+        if (val === 'memo' || val === 'description' || val === 'desc' || val === 'particulars' || val === 'name' ||
+            val === 'vendor' || val === 'payee' || val.startsWith('memo') || val.startsWith('desc') || val.includes('particular')) {
+          if (roles.Desc === -1 || val === 'memo' || val === 'description' || val === 'particulars') roles.Desc = j;
+        }
+      }
+      if (roles.Dr !== -1 && roles.Cr !== -1) {
+        if (roles.Amt === roles.Dr || roles.Amt === roles.Cr) {
+          roles.Amt = -1;
+        }
+      }
+      return roles;
+    }
+
+    function populateColumnOptions(side, colOptions, autoDetectedRoles = {}) {
       const prefix = side === 'sideB' ? 'mapSideB' : 'mapSideA';
       ['Ref', 'Amt', 'Dr', 'Cr', 'Date', 'Desc'].forEach(type => {
         const sel = document.getElementById(`${prefix}${type}`);
         if (!sel) return;
         const currentVal = sel.value;
-        sel.innerHTML = '<option value="-1">Auto-Detect</option>';
+        const autoIdx = autoDetectedRoles[type];
+        let autoLabel = 'Auto-Detect';
+        if (type === 'Amt' && autoDetectedRoles.Dr !== undefined && autoDetectedRoles.Dr >= 0 &&
+            autoDetectedRoles.Cr !== undefined && autoDetectedRoles.Cr >= 0 &&
+            (autoIdx === undefined || autoIdx < 0 || autoIdx === autoDetectedRoles.Dr || autoIdx === autoDetectedRoles.Cr)) {
+          autoLabel = 'Auto-Detect (Using Debit & Credit)';
+        } else if (autoIdx !== undefined && autoIdx >= 0 && colOptions[autoIdx]) {
+          autoLabel = `Auto-Detect (${colOptions[autoIdx].label})`;
+        }
+        let html = `<option value="-1">${autoLabel}</option>`;
+        if (type !== 'Ref') {
+          html += `<option value="-2">— None (Do not use) —</option>`;
+        }
         colOptions.forEach(opt => {
-          const optEl = document.createElement('option');
-          optEl.value = opt.idx;
-          optEl.textContent = opt.label;
-          sel.appendChild(optEl);
+          html += `<option value="${opt.idx}">${escapeHtml(opt.label)}</option>`;
         });
-        if (currentVal && sel.querySelector(`option[value="${currentVal}"]`)) {
+        sel.innerHTML = html;
+        if (currentVal !== undefined && sel.querySelector(`option[value="${currentVal}"]`)) {
           sel.value = currentVal;
         }
       });
-    }
-
-    function updateColumnOptionsFromSheet(sheet, side) {
-      if (!sheet) return;
-      const raw = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-      for (let i = 0; i < Math.min(raw.length, 25); i++) {
-        if (Array.isArray(raw[i]) && raw[i].some(c => String(c || '').trim().length > 0)) {
-          const colOptions = raw[i].map((cell, idx) => ({
-            idx,
-            label: `Col ${String.fromCharCode(65 + (idx % 26))}: ${String(cell || '').trim() || 'Column ' + (idx + 1)}`
-          }));
-          populateColumnOptions(side, colOptions);
-          break;
-        }
-      }
     }
 
     // Template Storage & JSON Export/Import
@@ -3419,12 +3910,21 @@
       // 5. Column Mapping Overrides
       if (tmpl.columnMapping) {
         columnMapping = { ...columnMapping, ...tmpl.columnMapping };
+        let hasCustomCol = false;
         colMapConfigs.forEach(m => {
           const el = document.getElementById(m.id);
           if (el && columnMapping[m.key] !== undefined) {
             el.value = String(columnMapping[m.key]);
+            const valNum = Number(columnMapping[m.key]);
+            if (valNum >= 0 || valNum === -2) hasCustomCol = true;
           }
         });
+        if (hasCustomCol) {
+          const wrap = document.getElementById('columnMappingWrap');
+          const btn = document.getElementById('btnToggleColumnMapping');
+          if (wrap) wrap.style.display = 'block';
+          if (btn) btn.classList.add('active');
+        }
       }
 
       // 6. Sheet selections (if present)
@@ -3745,7 +4245,7 @@
           appendOpt(qbSelect, name, name, name === qbSheetName);
           appendOpt(wipSelect, name, name, name === wipSheetName);
         });
-      } else if (currentMode === 'dual' || currentMode === 'supplier') {
+      } else if (currentMode === 'dual') {
         if (qbWorkbook) {
           qbWorkbook.SheetNames.forEach(name => {
             appendOpt(qbSelect, name, name);
@@ -3762,6 +4262,92 @@
           appendOpt(wipSelect, '', 'Extracted from PDF Statement');
         }
       }
+
+      // ---- PDF-aware UI state updates ----
+      const sideAIsPdf = (currentMode === 'dual' && !!qbPdfResult);
+      const sideBIsPdf = (currentMode === 'dual' && !!wipPdfResult);
+
+      // Sheet selector A: disable when PDF
+      qbSelect.disabled = sideAIsPdf;
+      qbSelect.style.opacity = sideAIsPdf ? '0.45' : '';
+      qbSelect.style.cursor = sideAIsPdf ? 'not-allowed' : '';
+      const pdfNoteA = document.getElementById('pdfNoteA');
+      if (pdfNoteA) pdfNoteA.style.display = sideAIsPdf ? 'block' : 'none';
+
+      // Sheet selector B: disable when PDF
+      wipSelect.disabled = sideBIsPdf;
+      wipSelect.style.opacity = sideBIsPdf ? '0.45' : '';
+      wipSelect.style.cursor = sideBIsPdf ? 'not-allowed' : '';
+      const pdfNoteB = document.getElementById('pdfNoteB');
+      if (pdfNoteB) pdfNoteB.style.display = sideBIsPdf ? 'block' : 'none';
+
+      // ── PDF Column Mapping: populate dropdowns from spatial colHeaders ─────────
+      // PDFs are no longer dimmed/disabled. The spatial extractor detected real column
+      // names from this supplier's PDF. Populate the mapping dropdowns so the user can
+      // fine-tune which column is Reference / Amount / Debit / Credit / Date / Desc.
+      const pdfNoteColMap = document.getElementById('pdfNoteColumnMapping');
+      if (pdfNoteColMap) pdfNoteColMap.style.display = 'none'; // no longer needed
+
+      const colMapCardA = document.getElementById('colMapCardA');
+      if (colMapCardA) {
+        // Clear any old "auto-extracted" dimming
+        colMapCardA.style.opacity = '';
+        colMapCardA.style.pointerEvents = '';
+        const oldBadgeA = colMapCardA.querySelector('.pdf-only-badge');
+        if (oldBadgeA) oldBadgeA.remove();
+
+        if (sideAIsPdf && qbPdfResult && qbPdfResult.colHeaders && qbPdfResult.colHeaders.length > 0) {
+          const autoRolesA = {
+            Ref: qbPdfResult.autoColRef,
+            Amt: qbPdfResult.autoColAmt,
+            Dr: qbPdfResult.autoColDebit,
+            Cr: qbPdfResult.autoColCredit,
+            Date: qbPdfResult.autoColDate,
+            Desc: qbPdfResult.autoColDesc
+          };
+          populateColumnOptions('sideA', qbPdfResult.colHeaders, autoRolesA);
+          if (!colMapCardA.querySelector('.pdf-spatial-badge')) {
+            const badge = document.createElement('div');
+            badge.className = 'pdf-spatial-badge';
+            badge.style.cssText = 'font-size:0.72rem;color:var(--sage-600);background:var(--sage-50);border:1px solid var(--sage-200);border-radius:6px;padding:0.3rem 0.6rem;margin-top:0.5rem;';
+            badge.textContent = `📄 PDF detected ${qbPdfResult.colHeaders.length} columns — select the right ones below`;
+            colMapCardA.prepend(badge);
+          }
+        } else if (!sideAIsPdf) {
+          const oldSpatialBadge = colMapCardA.querySelector('.pdf-spatial-badge');
+          if (oldSpatialBadge) oldSpatialBadge.remove();
+        }
+      }
+
+      const colMapCardB = document.getElementById('colMapCardB');
+      if (colMapCardB) {
+        colMapCardB.style.opacity = '';
+        colMapCardB.style.pointerEvents = '';
+        const oldBadgeB = colMapCardB.querySelector('.pdf-only-badge');
+        if (oldBadgeB) oldBadgeB.remove();
+
+        if (sideBIsPdf && wipPdfResult && wipPdfResult.colHeaders && wipPdfResult.colHeaders.length > 0) {
+          const autoRolesB = {
+            Ref: wipPdfResult.autoColRef,
+            Amt: wipPdfResult.autoColAmt,
+            Dr: wipPdfResult.autoColDebit,
+            Cr: wipPdfResult.autoColCredit,
+            Date: wipPdfResult.autoColDate,
+            Desc: wipPdfResult.autoColDesc
+          };
+          populateColumnOptions('sideB', wipPdfResult.colHeaders, autoRolesB);
+          if (!colMapCardB.querySelector('.pdf-spatial-badge')) {
+            const badge = document.createElement('div');
+            badge.className = 'pdf-spatial-badge';
+            badge.style.cssText = 'font-size:0.72rem;color:var(--sage-600);background:var(--sage-50);border:1px solid var(--sage-200);border-radius:6px;padding:0.3rem 0.6rem;margin-top:0.5rem;';
+            badge.textContent = `📄 PDF detected ${wipPdfResult.colHeaders.length} columns — select the right ones below`;
+            colMapCardB.prepend(badge);
+          }
+        } else if (!sideBIsPdf) {
+          const oldSpatialBadge = colMapCardB.querySelector('.pdf-spatial-badge');
+          if (oldSpatialBadge) oldSpatialBadge.remove();
+        }
+      }
     }
 
     function cleanNumber(val) {
@@ -3770,11 +4356,11 @@
       let s = String(val).replace(/[\u00A0\u202F\u2007\u200B]/g, ' ').trim();
       if (!s) return 0;
 
-      // Check if negative: accounting parentheses (1,234.56), trailing minus 1,234.56-, leading minus, or Cr
-      const isNegative = (s.includes('(') && s.includes(')')) ||
-                         s.endsWith('-') ||
-                         s.startsWith('-') ||
-                         /\bcr\b/i.test(s);
+      // Check if negative: accounting parentheses (1,234.56), trailing minus 1,234.56-, leading minus (e.g. -500 or SAR -500), or Cr
+      const hasAccountingParens = (s.includes('(') && s.includes(')'));
+      const hasMinus = /^[^\d]*-[^\d]*\d/.test(s) || s.endsWith('-');
+      const isCr = /\bcr\b/i.test(s);
+      const isNegative = hasAccountingParens || hasMinus || isCr;
 
       // Strip currency markers and outer parentheses
       s = s.replace(/^[A-Za-z\s$€£Rp]+/, '')
@@ -3872,7 +4458,8 @@
           }
 
           // Memo / Description matching
-          if (val === 'memo' || val === 'description' || val === 'desc' || val === 'particulars' || val === 'name' || val === 'vendor' || val === 'payee') {
+          if (val === 'memo' || val === 'description' || val === 'desc' || val === 'particulars' || val === 'name' ||
+              val === 'vendor' || val === 'payee' || val.startsWith('memo') || val.startsWith('desc') || val.includes('particular')) {
             if (curColDesc === -1 || val === 'memo' || val === 'description' || val === 'particulars') {
               curColDesc = j;
             }
@@ -3901,7 +4488,15 @@
             idx,
             label: `Col ${String.fromCharCode(65 + (idx % 26))}: ${String(cell || '').trim() || 'Column ' + (idx + 1)}`
           }));
-          populateColumnOptions(isSideB ? 'sideB' : 'sideA', colOptions);
+          const autoRoles = {
+            Ref: colNo,
+            Amt: colAmt,
+            Dr: colDebit,
+            Cr: colCredit,
+            Date: colDate,
+            Desc: colDesc
+          };
+          populateColumnOptions(isSideB ? 'sideB' : 'sideA', colOptions, autoRoles);
         }
       }
 
@@ -3912,7 +4507,7 @@
         if (colAmt === -1) colAmt = (colDebit !== -1 && colCredit !== -1) ? -1 : 1;
       }
 
-      // Apply manual column overrides if configured
+      // Apply manual column overrides if configured (>= 0 is specific column, -2 is None / disabled)
       const manualNo = isSideB ? columnMapping.sideBRef : columnMapping.sideARef;
       const manualAmt = isSideB ? columnMapping.sideBAmt : columnMapping.sideAAmt;
       const manualDr = isSideB ? columnMapping.sideBDr : columnMapping.sideADr;
@@ -3920,12 +4515,17 @@
       const manualDate = isSideB ? columnMapping.sideBDate : columnMapping.sideADate;
       const manualDesc = isSideB ? columnMapping.sideBDesc : columnMapping.sideADesc;
 
-      if (manualNo !== -1) colNo = manualNo;
-      if (manualAmt !== -1) colAmt = manualAmt;
-      if (manualDr !== -1) colDebit = manualDr;
-      if (manualCr !== -1) colCredit = manualCr;
-      if (manualDate !== -1) colDate = manualDate;
-      if (manualDesc !== -1) colDesc = manualDesc;
+      if (manualNo >= 0) colNo = manualNo;
+      if (manualAmt >= 0) colAmt = manualAmt;
+      else if (manualAmt === -2) colAmt = -1;
+      if (manualDr >= 0) colDebit = manualDr;
+      else if (manualDr === -2) colDebit = -1;
+      if (manualCr >= 0) colCredit = manualCr;
+      else if (manualCr === -2) colCredit = -1;
+      if (manualDate >= 0) colDate = manualDate;
+      else if (manualDate === -2) colDate = -1;
+      if (manualDesc >= 0) colDesc = manualDesc;
+      else if (manualDesc === -2) colDesc = -1;
 
       const map = new Map();
       let totalAmount = 0;
@@ -3949,26 +4549,28 @@
         const descVal = colDesc !== -1 && row[colDesc] !== undefined ? String(row[colDesc]).trim() : '';
 
         let amt = 0;
-        if (manualDr !== -1 && manualCr !== -1) {
-          const rawDr = row[manualDr];
-          const rawCr = row[manualCr];
-          if ((rawDr === undefined || rawDr === null || rawDr === '') &&
-              (rawCr === undefined || rawCr === null || rawCr === '')) continue;
-          const dr = cleanNumber(rawDr);
-          const cr = cleanNumber(rawCr);
-          amt = dr - cr;
-        } else if (colAmt !== -1) {
-          const rawAmt = row[colAmt];
-          if (rawAmt === undefined || rawAmt === null || rawAmt === '') continue;
-          amt = cleanNumber(rawAmt);
-        } else if (colDebit !== -1 && colCredit !== -1) {
+        const hasDrCr = colDebit !== -1 && colCredit !== -1;
+        if (hasDrCr && (manualAmt === -2 || colAmt === -1 || colAmt === colDebit || colAmt === colCredit || (manualDr !== -2 && manualCr !== -2))) {
           const rawDr = row[colDebit];
           const rawCr = row[colCredit];
           if ((rawDr === undefined || rawDr === null || rawDr === '') &&
               (rawCr === undefined || rawCr === null || rawCr === '')) continue;
-          const dr = cleanNumber(rawDr);
-          const cr = cleanNumber(rawCr);
-          amt = dr - cr;
+          const dr = (rawDr !== undefined && rawDr !== null && rawDr !== '') ? Math.abs(cleanNumber(rawDr)) : 0;
+          const cr = (rawCr !== undefined && rawCr !== null && rawCr !== '') ? Math.abs(cleanNumber(rawCr)) : 0;
+          if (dr === 0 && cr === 0 && !refNo) continue;
+          amt = dr > 0 ? (cr > 0 ? dr - cr : dr) : -cr;
+        } else if (colAmt !== -1) {
+          const rawAmt = row[colAmt];
+          if (rawAmt === undefined || rawAmt === null || rawAmt === '') continue;
+          amt = cleanNumber(rawAmt);
+        } else if (colDebit !== -1 && colCredit === -1 && (colAmt === -1 || manualAmt === -2)) {
+          const rawDr = row[colDebit];
+          if (rawDr === undefined || rawDr === null || rawDr === '') continue;
+          amt = Math.abs(cleanNumber(rawDr));
+        } else if (colCredit !== -1 && colDebit === -1 && (colAmt === -1 || manualAmt === -2)) {
+          const rawCr = row[colCredit];
+          if (rawCr === undefined || rawCr === null || rawCr === '') continue;
+          amt = -Math.abs(cleanNumber(rawCr));
         } else {
           continue;
         }
@@ -4029,15 +4631,16 @@
         refNo = normalizeRef(refNo, currentRefNormalizer);
         if (!refNo) continue;
 
-        amt = Math.round(amt * 100) / 100;
-        totalAmount = Math.round((totalAmount + amt) * 100) / 100;
+        const factor = Math.pow(10, getCurrencyDecimals());
+        amt = Math.round(amt * factor) / factor;
+        totalAmount = Math.round((totalAmount + amt) * factor) / factor;
         totalLines++;
 
         if (!map.has(refNo)) {
           map.set(refNo, { sum: 0, count: 0, rows: [] });
         }
         const curr = map.get(refNo);
-        curr.sum = Math.round((curr.sum + amt) * 100) / 100;
+        curr.sum = Math.round((curr.sum + amt) * factor) / factor;
         curr.count += 1;
         curr.rows.push({
           date: dateVal || '-',
@@ -4070,7 +4673,7 @@
         const wipSheetName = wipSelectVal || autoWIP;
 
         if (qbSheetName === wipSheetName) {
-          alert('Primary Sheet and Counterpart Sheet cannot be the same sheet. Please select two distinct sheets from the Settings panel.');
+          alert('Primary Sheet and Counterpart Sheet cannot be the same sheet. Please select two distinct sheets from the Worksheet & Column Setup card.');
           return;
         }
 
@@ -4080,12 +4683,13 @@
 
         qbResult = parseTransactionsFromSheet(qbSheet, false);
         wipResult = parseTransactionsFromSheet(wipSheet, true);
-      } else if (currentMode === 'dual' || currentMode === 'supplier') {
+      } else if (currentMode === 'dual') {
         if ((!qbWorkbook && !qbPdfResult) || (!wipWorkbook && !wipPdfResult)) return;
 
         // Side A transaction ingestion (Excel/CSV or PDF)
         if (qbPdfResult) {
-          qbResult = qbPdfResult;
+          // parsePDFVirtualTable applies any columnMapping overrides; falls back to auto-map if none set
+          qbResult = parsePDFVirtualTable(qbPdfResult, false);
         } else if (qbWorkbook) {
           const qbSheetName = qbSelectVal || qbWorkbook.SheetNames.find(s => s.toLowerCase().includes('quickbook') || s.toLowerCase().includes('qb') || s.toLowerCase().includes('primary') || s.toLowerCase().includes('statement')) || qbWorkbook.SheetNames[0];
           const qbSheet = qbWorkbook.Sheets[qbSheetName];
@@ -4095,7 +4699,7 @@
 
         // Side B transaction ingestion (Excel/CSV or PDF)
         if (wipPdfResult) {
-          wipResult = wipPdfResult;
+          wipResult = parsePDFVirtualTable(wipPdfResult, true);
         } else if (wipWorkbook) {
           const wipSheetName = wipSelectVal || wipWorkbook.SheetNames.find(s => s.toLowerCase().includes('wip') || s.toLowerCase().includes('ledger') || s.toLowerCase().includes('counterpart') || s.toLowerCase().includes('ap') || s.toLowerCase().includes('gl')) || wipWorkbook.SheetNames[0];
           const wipSheet = wipWorkbook.Sheets[wipSheetName];
@@ -4112,9 +4716,11 @@
       const tolSel = document.getElementById('selectTolerance');
       let tolerance = 0.01;
       if (tolSel && tolSel.value === 'custom') {
-        tolerance = parseFloat(document.getElementById('inputCustomTolerance')?.value) || 0.01;
+        const cv = parseFloat(document.getElementById('inputCustomTolerance')?.value);
+        tolerance = isNaN(cv) ? 0.01 : cv;
       } else if (tolSel) {
-        tolerance = parseFloat(tolSel.value) || 0.01;
+        const sv = parseFloat(tolSel.value);
+        tolerance = isNaN(sv) ? 0.01 : sv;
       }
       currentTolerance = tolerance;
 
@@ -4174,8 +4780,48 @@
       renderDiscrepanciesTable();
     }
 
-    // Accountant Workflow State
+    // Accountant Workflow State & Audit Persistence
+    const REVIEWED_STORAGE_KEY = 'andrula_reviewed_refs_v1';
     const reviewedRefs = new Set();
+
+    function loadReviewedRefsFromStorage() {
+      try {
+        const raw = sessionStorage.getItem(REVIEWED_STORAGE_KEY);
+        if (raw) {
+          const arr = JSON.parse(raw);
+          if (Array.isArray(arr)) {
+            arr.forEach(r => reviewedRefs.add(String(r)));
+          }
+        }
+      } catch (e) {
+        console.warn('Could not load reviewedRefs from sessionStorage:', e);
+      }
+    }
+
+    function saveReviewedRefsToStorage() {
+      try {
+        sessionStorage.setItem(REVIEWED_STORAGE_KEY, JSON.stringify([...reviewedRefs]));
+      } catch (e) {
+        console.warn('Could not persist reviewedRefs to sessionStorage:', e);
+      }
+    }
+
+    function clearReviewedRefsStorage() {
+      reviewedRefs.clear();
+      try {
+        sessionStorage.removeItem(REVIEWED_STORAGE_KEY);
+      } catch (e) {}
+    }
+
+    loadReviewedRefsFromStorage();
+
+    // Safeguard audit work: prompt confirmation if leaving or reloading with active reviewed items
+    window.addEventListener('beforeunload', (e) => {
+      if (reviewedRefs.size > 0 && allDiscrepancies.length > 0) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    });
     let currentSortCol = 'variance';
     let currentSortDir = 'desc';
     let tablePageSize = 'all'; // 'all' | '100' | '50' | '25'
@@ -4373,12 +5019,53 @@
       if (!str || str === '-') return '';
       const s = String(str).trim();
       if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
-      const parts = s.split(/[\/.-]/);
+
+      const monthNames = {
+        jan: '01', feb: '02', mar: '03', apr: '04', may: '05', jun: '06',
+        jul: '07', aug: '08', sep: '09', oct: '10', nov: '11', dec: '12'
+      };
+
+      const parts = s.replace(/,/g, '').split(/[\/\s.-]+/);
       if (parts.length === 3) {
+        const m0 = monthNames[parts[0].slice(0, 3).toLowerCase()];
+        const m1 = monthNames[parts[1].slice(0, 3).toLowerCase()];
+
+        if (m1) {
+          let year = parts[2];
+          if (year.length === 2) year = (parseInt(year, 10) >= 70 ? '19' : '20') + year;
+          if (year.length === 4) return `${year}-${m1}-${parts[0].padStart(2, '0')}`;
+        } else if (m0) {
+          let year = parts[2];
+          if (year.length === 2) year = (parseInt(year, 10) >= 70 ? '19' : '20') + year;
+          if (year.length === 4) return `${year}-${m0}-${parts[1].padStart(2, '0')}`;
+        }
+
         if (parts[0].length === 4) {
           return `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
-        } else if (parts[2].length === 4) {
-          return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+        }
+
+        let year = parts[2];
+        if (year.length === 2) year = (parseInt(year, 10) >= 70 ? '19' : '20') + year;
+
+        if (year.length === 4) {
+          const num1 = parseInt(parts[0], 10);
+          const num2 = parseInt(parts[1], 10);
+          // If second part > 12, it must be day (MM/DD/YYYY - US format, e.g. 03/15/2026)
+          if (num2 > 12 && num1 >= 1 && num1 <= 12) {
+            return `${year}-${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}`;
+          }
+          // If first part > 12, it must be day (DD/MM/YYYY - International / UAE format, e.g. 15/03/2026)
+          if (num1 > 12 && num2 >= 1 && num2 <= 12) {
+            return `${year}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+          }
+          // If both <= 12, default to DD/MM/YYYY (UAE standard) while ensuring valid ISO boundaries
+          if (num1 >= 1 && num1 <= 31 && num2 >= 1 && num2 <= 12) {
+            return `${year}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+          }
+          if (num1 >= 1 && num1 <= 12 && num2 >= 1 && num2 <= 31) {
+            return `${year}-${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}`;
+          }
+          return `${year}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
         }
       }
       return '';
@@ -4691,6 +5378,7 @@
       } else {
         reviewedRefs.delete(ref);
       }
+      saveReviewedRefsToStorage();
       const tr = checkbox.closest('tr');
       if (tr) tr.classList.toggle('row-reviewed', checkbox.checked);
       updateReviewCounterBadge();
@@ -4832,6 +5520,7 @@
       } else {
         reviewedRefs.delete(ref);
       }
+      saveReviewedRefsToStorage();
       updateModalAuditUI(isReviewed);
 
       // Sync background table row if rendered
@@ -4938,10 +5627,10 @@
         } else if (e.key === 'ArrowRight' || e.key === 'j' || e.key === 'J') {
           navigateModal(1);
           e.preventDefault();
-        } else if (e.key === 'm' || e.key === 'M') {
+        } else if ((e.key === 'm' || e.key === 'M') && !e.ctrlKey && !e.altKey && !e.metaKey) {
           toggleCurrentModalReviewed();
           e.preventDefault();
-        } else if (e.key === 'c' || e.key === 'C') {
+        } else if ((e.key === 'c' || e.key === 'C') && !e.ctrlKey && !e.altKey && !e.metaKey) {
           if (currentModalItem) {
             copyToClipboard(currentModalItem.ref, `Copied Reference: ${currentModalItem.ref}`);
             e.preventDefault();
@@ -4951,7 +5640,7 @@
       }
 
       // 6. Global Mode Switching: 1 for Two Separate Files (dual), 2 for Single Workbook (single)
-      if (!isTyping) {
+      if (!isTyping && !e.ctrlKey && !e.altKey && !e.metaKey) {
         if (e.key === '1') {
           switchMode('dual');
         } else if (e.key === '2') {
@@ -4972,14 +5661,15 @@
       }
     }
 
-    window.openDrilldownModalByRef = function (ref) {
+    function openDrilldownModalByRef(ref) {
       const item = allDiscrepancies.find(d => d.ref === ref);
       if (item) openDrilldownModal(item);
-    };
+    }
+    window.openDrilldownModalByRef = openDrilldownModalByRef;
 
     let currentModalSortMode = 'discrepancies';
 
-    function pairDrilldownLines(qbRows, wipRows, formulaType = 'standard', tolerance = 0.01, sortMode = 'discrepancies') {
+    function pairDrilldownLines(qbRows, wipRows, formulaType = 'standard', tolerance = 0.01, sortMode = 'discrepancies', isBalanced = false) {
       const qbList = (qbRows || []).map((r, idx) => ({ ...r, origIndex: idx, status: 'unmatched' }));
       const wipList = (wipRows || []).map((r, idx) => ({ ...r, origIndex: idx, status: 'unmatched' }));
 
@@ -5030,10 +5720,10 @@
         }
       });
 
-      // 2. Add remaining unmatched QuickBooks lines
+      // 2. Add remaining unmatched QuickBooks lines (as split_match if net balanced, else discrepant)
       qbList.filter(q => q.status === 'unmatched').forEach(q => {
         pairs.push({
-          status: 'discrepant_qb',
+          status: isBalanced ? 'split_match' : 'discrepant_qb',
           qb: q,
           wip: null,
           sortAmount: Math.abs(q.amount),
@@ -5042,10 +5732,10 @@
         });
       });
 
-      // 3. Add remaining unmatched WIP lines
+      // 3. Add remaining unmatched WIP lines (as split_match if net balanced, else discrepant)
       wipList.filter(w => w.status === 'unmatched').forEach(w => {
         pairs.push({
-          status: 'discrepant_wip',
+          status: isBalanced ? 'split_match' : 'discrepant_wip',
           qb: null,
           wip: w,
           sortAmount: Math.abs(w.amount),
@@ -5096,37 +5786,6 @@
 
       document.getElementById('modalQBLinesCount').innerText = `(${item.qbLines} line${item.qbLines === 1 ? '' : 's'})`;
       document.getElementById('modalWIPLinesCount').innerText = `(${item.wipLines} line${item.wipLines === 1 ? '' : 's'})`;
-
-      // 1. Prepare row matching algorithm
-      const qbAnnotated = item.qbRows.map(r => ({ ...r, status: 'unmatched' }));
-      const wipAnnotated = item.wipRows.map(r => ({ ...r, status: 'unmatched' }));
-
-      // Pair amount matches using active reconciliation formula and tolerance
-      qbAnnotated.forEach(q => {
-        const match = wipAnnotated.find(w => {
-          if (w.status !== 'unmatched') return false;
-          const rowVariance = calculateVariance(q.amount, w.amount, currentFormulaType);
-          return Math.abs(rowVariance) <= currentTolerance;
-        });
-        if (match) {
-          q.status = 'matched';
-          match.status = 'matched';
-        }
-      });
-
-      // Check if both sides have total matching sum despite different line counts (split transactions)
-      const isNetSumBalanced = Math.abs(item.variance) <= currentTolerance && item.qbLines > 0 && item.wipLines > 0;
-      if (isNetSumBalanced) {
-        qbAnnotated.forEach(q => { if (q.status === 'unmatched') q.status = 'split_match'; });
-        wipAnnotated.forEach(w => { if (w.status === 'unmatched') w.status = 'split_match'; });
-      }
-
-      // If one entire side is missing, mark existing side as missing_peer
-      if (item.qbLines === 0) {
-        wipAnnotated.forEach(w => { w.status = 'missing_peer'; });
-      } else if (item.wipLines === 0) {
-        qbAnnotated.forEach(q => { q.status = 'missing_peer'; });
-      }
 
       // 1. Alert Banner & Explanatory Text
       const alertBanner = document.getElementById('modalAlertBanner');
@@ -5275,10 +5934,10 @@
       }
 
       // Case C: Both Ledgers Populated -> Side-by-Side Paired Alignment
-      const pairedRows = pairDrilldownLines(item.qbRows, item.wipRows, currentFormulaType, currentTolerance, currentModalSortMode);
+      const isNetSumBalanced = Math.abs(item.variance) <= currentTolerance;
+      const pairedRows = pairDrilldownLines(item.qbRows, item.wipRows, currentFormulaType, currentTolerance, currentModalSortMode, isNetSumBalanced);
 
       // Evaluate Net Balance vs Discrepancies
-      const isNetSumBalanced = Math.abs(item.variance) <= currentTolerance;
       const discrepantCount = pairedRows.filter(p => p.status !== 'matched' && p.status !== 'split_match').length;
 
       if (isNetSumBalanced) {
@@ -5369,9 +6028,12 @@
           }
         } else {
           trQB.className = 'row-placeholder';
+          const placeholderPill = pair.status === 'split_match'
+            ? `<span class="empty-counterpart-pill" style="opacity: 0.75;">— Balanced split component —</span>`
+            : `<span class="empty-counterpart-pill">— No counterpart line in ${escapeHtml(activeRecipe.sideAName)} —</span>`;
           trQB.innerHTML = `
             <td colspan="4" class="empty-counterpart-cell">
-              <span class="empty-counterpart-pill">— No counterpart line in ${escapeHtml(activeRecipe.sideAName)} —</span>
+              ${placeholderPill}
             </td>
           `;
         }
@@ -5415,9 +6077,12 @@
           }
         } else {
           trWIP.className = 'row-placeholder';
+          const placeholderPill = pair.status === 'split_match'
+            ? `<span class="empty-counterpart-pill" style="opacity: 0.75;">— Balanced split component —</span>`
+            : `<span class="empty-counterpart-pill">— No counterpart line in ${escapeHtml(activeRecipe.sideBName)} —</span>`;
           trWIP.innerHTML = `
             <td colspan="4" class="empty-counterpart-cell">
-              <span class="empty-counterpart-pill">— No counterpart line in ${escapeHtml(activeRecipe.sideBName)} —</span>
+              ${placeholderPill}
             </td>
           `;
         }
@@ -5469,7 +6134,6 @@
       const dataItems = getFilteredAndSortedDiscrepancies();
       if (!dataItems.length) return;
 
-      const isSupplier = currentMode === 'supplier';
       const activeRecipe = RECONCILIATION_RECIPES[currentRecipeId] || RECONCILIATION_RECIPES.wip_gl;
 
       const exportData = dataItems.map(item => {
@@ -5496,7 +6160,7 @@
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Discrepancies");
       const filterSuffix = currentFilter !== 'all' ? `_${currentFilter}` : '';
-      const recipeSlug = (activeRecipe.id || (isSupplier ? 'Supplier' : 'WIP')).replace(/[^A-Za-z0-9_]/g, '');
+      const recipeSlug = (activeRecipe.id || 'WIP').replace(/[^A-Za-z0-9_]/g, '');
       const filename = `Andrula_${recipeSlug}_Reconciliation${filterSuffix}_${new Date().toISOString().slice(0, 10)}.xlsx`;
       XLSX.writeFile(wb, filename);
     });
@@ -5558,12 +6222,6 @@
     // Initial label synchronization on startup
     updateLabelsForMode();
   </script>
-
-  <!-- Toast Notification element -->
-  <div id="toastNotification" class="toast-pill">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-    <span id="toastMessage">Copied reference!</span>
-  </div>
 </body>
 
 </html>
