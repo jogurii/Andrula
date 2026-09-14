@@ -14,11 +14,18 @@ Processes spreadsheets and PDF statements entirely inside your web browser. No f
 - **Universal Multi-Format Ingestion**:
   - Both dropzones automatically route spreadsheets to SheetJS and PDF statements to the visual coordinate extraction engine.
   - Dropzone titles, descriptions, column mappers, and table headers dynamically adapt to the active accounting recipe (e.g. *Supplier SOA vs AP*, *Bank Rec*, *QuickBooks vs WIP*).
-- **Automatic Detection with Manual Control**:
-  - Automatically identifies common sheet names (`QuickBooks`, `QB`, `WIP`, `Ledger`) and columns (`No.`, `Ref No`, `Amount`, `Date`, `Memo/Description`).
-  - Transparent auto-detection indicators (`Auto-Detect (Col X: Header)`) for both spreadsheets and PDF statements.
-  - Dedicated **Worksheet & Column Setup** card located directly beneath upload dropzones to quickly switch sheets and fine-tune column mappings or select `— None (Do not use) —` to resolve Net vs Debit/Credit column conflicts.
-  - Collapsible **Reconciliation Recipe & Formula Settings** panel focused on business recipe profiles, math formulas ($A - B = 0$, $A + B = 0$, $|A| - |B| = 0$), reference normalizers, and reusable template JSON export/import.
+- **Dedicated Worksheet & Column Setup Card**:
+  - Located directly beneath upload dropzones (`#ingestionSetupCard`), separating file ingestion from business logic.
+  - **Sheet Selection**: Instantly choose sheets for multi-tab workbooks, with PDF detection badges (`📄 PDF loaded — extraction is automatic`).
+  - **Custom Column Mapping**: Expandable card with pixel-perfect horizontal alignment across Side A and Side B.
+  - **Header Format Badges**: Compact pill badges in card headers (`📊 Sheet (6 cols)`, `📄 PDF (9 cols)`) displaying detected source formats and column counts.
+  - **Transparent Auto-Detection & Symmetry**:
+    - Statements with separate Dr/Cr columns display `Auto-Detect (Using Debit & Credit)` for Amount.
+    - Statements with a single signed Net Amount column display `Auto-Detect (Using Net Amount)` for Debit and Credit.
+    - Recognized columns display exact headers: `Auto-Detect (Col X: Header Name)`.
+  - **`— None (Do not use) —` Option**: Allows users to explicitly disable unneeded or conflicting columns (Amount, Debit, Credit, Date, Description) while protecting Reference keys.
+- **Configurable Reconciliation Recipe & Formula Settings**:
+  - Collapsible control center focused on business logic: recipe presets, mathematical matching formulas ($A - B = 0$, $A + B = 0$, $|A| - |B| = 0$), reference normalizers, tolerance thresholds, and template JSON export/import.
 - **Detailed Discrepancy Breakdown & Audit Triage**:
   - Categorizes records by status: *Amount Mismatch*, *Missing in Primary Ledger*, *Missing in Counterpart Ledger*, or *Line Count Difference*.
   - Persistent **"Mark as Reviewed"** audit tracking with live progress counter (e.g., `12 of 38 Reviewed (32%)`).
@@ -99,16 +106,17 @@ Andrula works with standard Excel files (`.xlsx` or `.xls`) and CSV files. The p
 
 | Field | Recognized Header Names |
 | :--- | :--- |
-| **Reference Number** | `No.`, `No`, `Ref No`, `Reference`, `Num`, `Ref`, `Doc No`, `Transaction` |
-| **Amount** | `Amount`, `Amt`, `Nominal`, `Net Amount`, `Total` |
-| **Date** *(optional)* | `Date`, `Tanggal`, `Trans Date` |
-| **Description** *(optional)* | `Memo`, `Description`, `Desc`, `Name`, `Vendor`, `Particulars` |
+| **Reference Number** | `No.`, `No`, `Ref No`, `Reference`, `Num`, `Ref`, `Doc No`, `Transaction`, `Vchr No`, `Invoice` |
+| **Amount** | `Amount`, `Amt`, `Nominal`, `Net Amount`, `Total`, `Balance` |
+| **Debit / Credit** | `Debit`, `Dr`, `Invoice`, `Billing` / `Credit`, `Cr`, `Payment`, `Adjustment`, `Receipt` |
+| **Date** *(optional)* | `Date`, `Tanggal`, `Trans Date`, `Doc Date`, `Txn Date`, `Invoice Date`, `Ref Date` |
+| **Description** *(optional)* | `Memo`, `Description`, `Desc`, `Name`, `Vendor`, `Particulars`, `Payee`, `LPO` |
 
 ---
 
 ## Reconciliation Recipe Engine & Multi-Formula Matching
 
-Andrula includes a **Reconciliation Recipe Engine** that adapts to any accounting schedule, subledger, or financial schedule. Open the **Reconciliation Recipe & Formula Settings** control center on the upload card to configure:
+Andrula includes a modular **Reconciliation Recipe Engine** that adapts to any accounting schedule, subledger, or financial schedule. Open the **Reconciliation Recipe & Formula Settings** control center to configure:
 
 ### 1. Built-in Recipe Presets
 - **QuickBooks vs WIP Ledger**: Direct difference matching ($A - B = 0$) with fuzzy reference cleanup.
@@ -127,14 +135,20 @@ Andrula includes a **Reconciliation Recipe Engine** that adapts to any accountin
 - **Alphanumeric Only**: Removes all special characters, spaces, slashes, and hyphens (e.g., `INV/2026/08` matches `INV202608`).
 - **Exact Match**: Strict case-insensitive character comparison.
 
-### 4. Dynamic Column Mapping & Separate Debit/Credit Overrides
+### 4. Dynamic Column Mapping & Running Balance Parity
 When spreadsheets or PDF statements are uploaded, candidate columns are automatically extracted and populated into dropdowns for:
 - **Side A (Primary Ledger)**: Reference Number, Amount (Net/Signed), Debit (Dr), Credit (Cr), Date, and Description.
 - **Side B (Counterpart Ledger)**: Reference Number, Amount (Net/Signed), Debit (Dr), Credit (Cr), Date, and Description.
 
-Accountants can map single net amount columns or separate Debit/Credit columns ($Amount = Debit - Credit$) without modifying source files.
-
-**PDF Spatial Column Remapping**: When a PDF statement is uploaded, Andrula's visual coordinate detector extracts candidate columns and displays a `📄 PDF detected N columns` badge on the mapping card, enabling you to reassign column roles directly from the interface if needed.
+#### Key Ingestion Capabilities:
+- **Separate Debit/Credit Support**: Ingests statements using separate Dr/Cr columns ($Amount = Debit - Credit$) as well as single net amount columns.
+- **Label Symmetry & Clarity**:
+  - If a file uses separate Dr and Cr columns, Amount displays `Auto-Detect (Using Debit & Credit)`.
+  - If a file uses a single Net Amount column, Debit and Credit display `Auto-Detect (Using Net Amount)`.
+  - When a specific column is matched, it displays `Auto-Detect (Col X: Header Name)`.
+- **`— None (Do not use) —` Option**: Allows accountants to explicitly disable unneeded or conflicting columns (e.g. disabling a running balance column or ignoring optional memo fields) while keeping mandatory voucher reference matching intact.
+- **Multi-Column Vendor Statements & Realsoft ERP Parity**: Handles statements where a cumulative running balance column exists alongside transaction invoices and adjustments, preventing auto-detect collisions and ensuring manual overrides and auto-detection produce 100% identical reconciliation figures.
+- **Card Symmetry & Format Badges**: Both Side A and Side B cards feature integrated `.column-map-card-header` flex rows with format & column count indicators (`📊 Sheet (6 cols)`, `📄 PDF (9 cols)`), keeping all input rows horizontally aligned.
 
 ### 5. Multi-Line ERP Split Reports ("Fill-Down Blank References")
 Detailed ERP reports (e.g. QuickBooks Detailed, SAP, Sage 50/300, Netsuite, MYOB) often print the voucher reference number only on the first split row, leaving subsequent line items with amounts but empty reference cells.
@@ -181,8 +195,11 @@ Andrula/
 │       ├── plans/          # Implementation plans
 │       └── specs/          # Design specifications
 └── scratch/                # Unit test suites and verification scripts
-    ├── test_universal_mode.js
-    └── test_pair_drilldown_lines.js
+    ├── deep_audit.js       # Static DOM integrity, ID uniqueness, and function checks
+    ├── test_column_mapping.js  # Column detection, option generation, and None option tests
+    ├── test_user_scenario.js   # Real-world statement parsing and parity testing
+    ├── test_universal_mode.js  # Universal 2-option mode & file ingestion tests
+    └── test_pair_drilldown_lines.js  # Side-by-side paired drill-down algorithm tests
 ```
 
 ### Running Automated Tests
@@ -190,6 +207,15 @@ Andrula/
 You can run the included test suites using Node.js:
 
 ```bash
+# Run deep static DOM & JavaScript audit
+node scratch/deep_audit.js
+
+# Test column mapping, role auto-detection, and 'None' option handling
+node scratch/test_column_mapping.js
+
+# Test Realsoft ERP statement & multi-column ledger parsing parity
+node scratch/test_user_scenario.js
+
 # Test universal 2-option mode & file format ingestion
 node scratch/test_universal_mode.js
 
